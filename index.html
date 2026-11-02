@@ -141,13 +141,13 @@
     display:flex;flex-direction:column;justify-content:flex-end;padding:16px;
     color:#fff;transition:.3s;
   }
+  .trabajo-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
   .trabajo-card::before{
-    content:"";position:absolute;inset:0;
-    background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.45) 100%);
+    content:"";position:absolute;inset:0;z-index:1;
+    background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.55) 100%);
   }
   .trabajo-card:hover{transform:translateY(-4px);box-shadow:var(--sombra)}
-  .trabajo-card .emoji{font-size:28px;position:absolute;top:16px;left:16px;opacity:.95;z-index:1}
-  .trabajo-card .cap{font-size:12.5px;font-weight:600;letter-spacing:.3px;position:relative;z-index:1}
+  .trabajo-card .cap{font-size:12.5px;font-weight:600;letter-spacing:.3px;position:relative;z-index:2}
 
   /* ===== Ubicación ===== */
   .ubicacion-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:30px;align-items:start}
@@ -436,7 +436,6 @@
 
     <section id="trabajos" class="seccion">
       <h2 class="titulo-seccion reveal">Nuestros trabajos</h2>
-      <p class="aviso-ejemplo">Fotos de ejemplo — se sustituyen por fotos reales del salón cuando Luis las tenga listas.</p>
       <div class="trabajos-grid" id="grid-trabajos"></div>
     </section>
 
@@ -566,13 +565,14 @@ function renderRedesSociales(config){
   });
 }
 
-const TRABAJOS_EJEMPLO = [
-  {emoji:"💇‍♀️", cap:"Balayage dorado", color:"linear-gradient(135deg,#c9a24b,#8a6a2a)"},
-  {emoji:"✂️", cap:"Corte bob clásico", color:"linear-gradient(135deg,#3a362c,#1a1812)"},
-  {emoji:"👰", cap:"Recogido de novia", color:"linear-gradient(135deg,#e4cd94,#b8903d)"},
-  {emoji:"💅", cap:"Manicura francesa", color:"linear-gradient(135deg,#d7a9a0,#a15a5a)"},
-  {emoji:"💄", cap:"Maquillaje de noche", color:"linear-gradient(135deg,#4a3b52,#2a2235)"},
-  {emoji:"🧖‍♀️", cap:"Tratamiento facial glow", color:"linear-gradient(135deg,#9bb089,#4a7c59)"}
+// Fotos reales del Instagram de María Torres (@mariatorres_mpb).
+const TRABAJOS_REALES = [
+  {foto:"imagenes/trabajo-1.jpg", cap:"Manicura craquelada"},
+  {foto:"imagenes/trabajo-2.jpg", cap:"Nail art en color"},
+  {foto:"imagenes/trabajo-3.jpg", cap:"Maquillaje editorial"},
+  {foto:"imagenes/trabajo-4.jpg", cap:"Nuestro salón"},
+  {foto:"imagenes/trabajo-5.jpg", cap:"Maquillaje de novia"},
+  {foto:"imagenes/trabajo-6.jpg", cap:"Recogido elegante"}
 ];
 
 function fechaEnDias(n){
@@ -711,9 +711,9 @@ function formatoFechaLarga(fechaISO){
 /* ===================== SECCIONES FIJAS (trabajos) ===================== */
 
 function pintarTrabajos(){
-  document.getElementById("grid-trabajos").innerHTML = TRABAJOS_EJEMPLO.map((t,i)=>`
-    <div class="trabajo-card reveal" style="background:${t.color};transition-delay:${i*70}ms">
-      <span class="emoji">${t.emoji}</span>
+  document.getElementById("grid-trabajos").innerHTML = TRABAJOS_REALES.map((t,i)=>`
+    <div class="trabajo-card reveal" style="transition-delay:${i*70}ms">
+      <img src="${t.foto}" alt="${t.cap}" loading="lazy">
       <span class="cap">${t.cap}</span>
     </div>`).join("");
 }
