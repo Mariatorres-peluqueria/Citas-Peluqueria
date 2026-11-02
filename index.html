@@ -60,9 +60,16 @@
     border-right:3px solid var(--dorado);
     z-index:30;
   }
-  .sidebar .marca h1{color:#fff;font-size:22px;line-height:1.25;letter-spacing:.3px}
-  .sidebar .marca .subt{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--dorado-suave);margin-top:8px}
-  .sidebar .marca .linea{width:34px;height:1px;background:linear-gradient(90deg,var(--dorado),transparent);margin-top:16px}
+  .sidebar .marca{display:flex;align-items:center;gap:14px}
+  .sidebar .marca .sello{
+    width:46px;height:46px;flex:0 0 46px;border-radius:50%;
+    background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 10px rgba(0,0,0,.3);border:1.5px solid var(--dorado);
+  }
+  .sidebar .marca .sello img{width:100%;height:100%;object-fit:cover}
+  .sidebar .marca .texto h1{color:#fff;font-size:19px;line-height:1.2;letter-spacing:.3px}
+  .sidebar .marca .subt{font-size:9.5px;letter-spacing:2.2px;text-transform:uppercase;color:var(--dorado-suave);margin-top:5px}
+  .sidebar .marca .linea{display:none}
 
   .nav-lateral{display:flex;flex-direction:column;gap:2px}
   .nav-link{
@@ -92,8 +99,8 @@
   .redes svg{width:17px;height:17px;fill:currentColor}
 
   .contenido{flex:1;min-width:0}
-  .seccion{padding:64px 44px;max-width:900px;margin:0 auto;scroll-margin-top:20px}
-  .seccion + .seccion{border-top:1px solid var(--beige)}
+  .seccion{padding:64px 44px;max-width:900px;margin:0 auto;display:none}
+  .seccion.activa{display:block;animation:aparecer .35s ease}
 
   /* ===== Inicio ===== */
   .hero{text-align:left;padding-top:10px}
@@ -211,10 +218,12 @@
   .tarjeta-servicio:hover{border-color:var(--dorado-suave);transform:translateY(-1px);box-shadow:var(--sombra-suave)}
   .tarjeta-servicio.seleccionada{border-color:var(--dorado);background:#fbf6ea;box-shadow:0 6px 18px rgba(138,106,46,.16)}
   .tarjeta-servicio .icono{
-    font-size:26px;width:48px;height:48px;flex:0 0 48px;
+    width:48px;height:48px;flex:0 0 48px;
     display:flex;align-items:center;justify-content:center;
     background:var(--beige);border-radius:50%;
+    color:var(--dorado-profundo);
   }
+  .tarjeta-servicio .icono svg{width:22px;height:22px}
   .tarjeta-servicio .info{flex:1;min-width:120px}
   .tarjeta-servicio .info h4{font-size:16px;font-family:'Playfair Display',serif}
   .tarjeta-servicio .info p{margin:2px 0 0;font-size:12.5px;color:var(--texto-claro)}
@@ -322,7 +331,8 @@
       flex-direction:row;align-items:center;gap:16px;padding:12px 14px;
       overflow-x:auto;border-right:none;border-bottom:3px solid var(--dorado);
     }
-    .sidebar .marca{flex:0 0 auto}
+    .sidebar .marca{flex:0 0 auto;gap:8px}
+    .sidebar .marca .sello{width:30px;height:30px;flex:0 0 30px}
     .sidebar .marca h1{font-size:15px;white-space:nowrap}
     .sidebar .marca .subt,.sidebar .marca .linea{display:none}
     .nav-lateral{flex-direction:row;gap:2px;flex:1 1 auto}
@@ -331,7 +341,7 @@
     .nav-link.activo{border-bottom-color:var(--dorado);border-left-color:transparent}
     .nav-link.destacado{margin-top:0;padding:9px 12px}
     .sidebar .redes{display:none}
-    .seccion{padding:36px 18px;scroll-margin-top:66px}
+    .seccion{padding:36px 18px}
     .ubicacion-grid{grid-template-columns:1fr}
   }
   @media (max-width:480px){
@@ -353,12 +363,14 @@
 <div class="app-shell">
   <aside class="sidebar">
     <div class="marca">
-      <h1 id="nombreNegocio">María Torres</h1>
-      <div class="subt">Peluquería · Estética</div>
-      <div class="linea"></div>
+      <div class="sello"><img src="imagenes/logo-mf.jpg" alt="Logo MARIA&amp;FRAN"></div>
+      <div class="texto">
+        <h1 id="nombreNegocio">María Torres</h1>
+        <div class="subt">Peluquería · Estética</div>
+      </div>
     </div>
     <nav class="nav-lateral" id="navLateral">
-      <a href="#inicio" class="nav-link" data-sec="inicio">Inicio</a>
+      <a href="#sobre-nosotros" class="nav-link" data-sec="sobre-nosotros">Sobre nosotros</a>
       <a href="#trabajos" class="nav-link" data-sec="trabajos">Trabajos</a>
       <a href="#ubicacion" class="nav-link" data-sec="ubicacion">Ubicación</a>
       <a href="#reservar" class="nav-link destacado" data-sec="reservar">Reservar cita</a>
@@ -368,13 +380,13 @@
 
   <main class="contenido">
 
-    <section id="inicio" class="seccion">
+    <section id="sobre-nosotros" class="seccion">
       <div class="hero reveal">
         <span class="eyebrow">Peluquería · Estética · Desde 2010</span>
         <h2>Tu mejor versión, en manos expertas</h2>
         <div class="divisor"></div>
         <p class="lead">En María Torres Peluquería y Estética cuidamos cada detalle: corte, color, uñas, maquillaje y tratamientos de belleza, con un equipo especializado y un ambiente pensado para que te relajes desde que entras por la puerta.</p>
-        <a href="#reservar" class="btn btn-dorado cta">Reservar cita ahora</a>
+        <a href="#reservar" class="btn btn-dorado cta" data-sec="reservar">Reservar cita ahora</a>
         <div class="franja-horario">
           <div><b>Lunes a sábado</b>09:00 – 20:00</div>
           <div><b>Domingo</b>Cerrado</div>
@@ -411,9 +423,9 @@
       </div>
     </section>
 
-    <section id="reservar" class="seccion seccion-reservar">
+    <section id="reservar" class="seccion seccion-reservar activa">
       <h2 class="titulo-seccion reveal">Reserva tu cita</h2>
-      <p class="intro-reserva">Ve bajando: elige el tratamiento, el profesional, el día y la hora, y confirma al final.</p>
+      <p class="intro-reserva">Elige el tratamiento, el profesional, el día y la hora, y confirma al final.</p>
       <div class="pasos" id="pasos"></div>
       <div id="pasosReserva"></div>
     </section>
@@ -499,7 +511,9 @@ function aplicarDatosNegocio(config){
 // en el panel de administración).
 function renderRedesSociales(config){
   const botones = [];
-  if(config.telefono){
+  if(config.whatsapp_url){
+    botones.push({href:config.whatsapp_url, texto:"WA", titulo:"Escribir por WhatsApp"});
+  } else if(config.telefono){
     const digitos = config.telefono.replace(/\D/g,"");
     const conPrefijo = digitos.length===9 ? "34"+digitos : digitos;
     if(conPrefijo) botones.push({href:`https://wa.me/${conPrefijo}`, texto:"WA", titulo:"Escribir por WhatsApp"});
@@ -627,6 +641,29 @@ function asegurarHoras(){
   }
 }
 
+// Iconos de línea, minimalistas, uno por categoría (más elegante que
+// emoji sueltos y distintos entre sí). stroke="currentColor" para que
+// tomen el color dorado del círculo que los envuelve.
+const ICONOS_CATEGORIA = {
+  peluqueria: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="4" y1="5" x2="20" y2="5"/><line x1="5" y1="5" x2="5" y2="18"/><line x1="8.5" y1="5" x2="8.5" y2="15"/>
+    <line x1="12" y1="5" x2="12" y2="18"/><line x1="15.5" y1="5" x2="15.5" y2="15"/><line x1="19" y1="5" x2="19" y2="18"/>
+  </svg>`,
+  unas: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="9.5" y="3" width="5" height="3"/><polygon points="8,6 16,6 17,9 7,9"/><rect x="7" y="9" width="10" height="11" rx="2"/>
+  </svg>`,
+  maquillaje: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="9.5" y="3" width="5" height="6" rx="1.8"/><rect x="8" y="9" width="8" height="3.5"/><rect x="6.5" y="12.5" width="11" height="8" rx="1.5"/>
+  </svg>`,
+  belleza: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <circle cx="12" cy="7.5" r="3"/><circle cx="12" cy="16.5" r="3"/><circle cx="7.5" cy="12" r="3"/><circle cx="16.5" cy="12" r="3"/>
+    <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
+  </svg>`
+};
+function iconoCategoria(categoria){
+  return ICONOS_CATEGORIA[categoria] || ICONOS_CATEGORIA.belleza;
+}
+
 function formatoFechaLarga(fechaISO){
   const d = new Date(fechaISO+"T00:00:00");
   return d.toLocaleDateString("es-ES",{weekday:"long", day:"numeric", month:"long"});
@@ -642,29 +679,32 @@ function pintarTrabajos(){
     </div>`).join("");
 }
 
-function activarAparicionSuave(){
-  const obs = new IntersectionObserver((entries)=>{
-    entries.forEach(entry=>{
-      if(entry.isIntersecting){ entry.target.classList.add("visible"); obs.unobserve(entry.target); }
-    });
-  }, {threshold:.15, rootMargin:"0px 0px -60px 0px"});
-  document.querySelectorAll(".reveal").forEach(el=>obs.observe(el));
+/* ===================== NAV: cambiar de pestaña (páginas separadas, sin scroll) ===================== */
+
+const SECCIONES = ["sobre-nosotros","trabajos","ubicacion","reservar"];
+
+function irASeccion(id){
+  if(!SECCIONES.includes(id)) return;
+  SECCIONES.forEach(s=>{
+    const el = document.getElementById(s);
+    if(el) el.classList.toggle("activa", s===id);
+  });
+  document.querySelectorAll(".nav-link").forEach(a=>{
+    a.classList.toggle("activo", a.dataset.sec===id && !a.classList.contains("destacado"));
+  });
+  window.scrollTo({top:0, behavior:"instant"});
+  document.querySelectorAll(".reveal:not(.visible)").forEach(el=>{
+    if(el.getBoundingClientRect().top < window.innerHeight) el.classList.add("visible");
+  });
 }
 
-/* ===================== NAV LATERAL: resaltar sección visible ===================== */
-
-function activarNavSegunScroll(){
-  const secciones = ["inicio","trabajos","ubicacion","reservar"].map(id=>document.getElementById(id));
-  const enlaces = Array.from(document.querySelectorAll(".nav-link"));
-  const obs = new IntersectionObserver((entries)=>{
-    entries.forEach(entry=>{
-      if(entry.isIntersecting){
-        const id = entry.target.id;
-        enlaces.forEach(a=>a.classList.toggle("activo", a.dataset.sec===id && !a.classList.contains("destacado")));
-      }
+function activarNavegacion(){
+  document.querySelectorAll("[data-sec]").forEach(el=>{
+    el.addEventListener("click", (e)=>{
+      e.preventDefault();
+      irASeccion(el.dataset.sec);
     });
-  }, {rootMargin:"-40% 0px -55% 0px"});
-  secciones.forEach(s=>s && obs.observe(s));
+  });
 }
 
 /* ===================== RESERVAS: render apilado ===================== */
@@ -751,7 +791,7 @@ function vistaPaso1(){
         const sel = estado.serviciosElegidos.includes(s.id);
         return `
         <div class="tarjeta-servicio ${sel?'seleccionada':''}" data-servicio="${s.id}">
-          <div class="icono">${s.icono}</div>
+          <div class="icono">${iconoCategoria(s.categoria)}</div>
           <div class="info"><h4>${s.nombre}</h4><p>${s.descripcion}</p></div>
           <div class="precio-dur"><div class="precio">${s.precio} €</div><div class="dur">${s.duracion} min</div></div>
           <div class="marca-check">${sel?'✓':''}</div>
@@ -982,8 +1022,8 @@ async function iniciar(){
   await cargarDatosIniciales();
   pintarTrabajos();
   renderReserva();
-  activarNavSegunScroll();
-  activarAparicionSuave();
+  activarNavegacion();
+  irASeccion("reservar");
 }
 iniciar();
 </script>
