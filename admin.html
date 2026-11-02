@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de administración — María Torres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --crema:#f7f2e9; --beige:#ece3d2; --negro:#17140f; --negro-suave:#26221a;
+    --dorado:#b8903f; --dorado-suave:#e6d4a3; --dorado-profundo:#8a6a2e;
+    --texto:#2b2620; --texto-claro:#796f5e; --ok:#4a7c59; --error:#a14545;
+    --radio:12px; --sombra:0 10px 28px rgba(23,20,15,.1);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--crema);color:var(--texto);font-family:'Poppins',sans-serif;min-height:100vh}
+  h1,h2,h3{font-family:'Playfair Display',serif;margin:0}
+  button{font-family:inherit}
+
+  /* Login */
+  .pantalla-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .caja-login{background:#fff;border-radius:var(--radio);box-shadow:var(--sombra);padding:36px 32px;width:100%;max-width:360px}
+  .caja-login h1{font-size:22px;text-align:center;margin-bottom:4px}
+  .caja-login .subt{text-align:center;color:var(--texto-claro);font-size:13px;margin-bottom:24px}
+
+  /* Estructura general */
+  .topbar{background:var(--negro);color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid var(--dorado)}
+  .topbar h1{font-size:17px;color:#fff}
+  .topbar .quien{font-size:12px;color:var(--dorado-suave)}
+  .tabs{display:flex;gap:4px;padding:14px 24px 0;background:#fff;border-bottom:1px solid var(--beige);overflow-x:auto}
+  .tab-btn{padding:10px 16px;border:none;background:none;color:var(--texto-claro);font-weight:600;font-size:13.5px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+  .tab-btn.activa{color:var(--negro);border-bottom-color:var(--dorado)}
+  .contenedor{max-width:900px;margin:0 auto;padding:28px 20px 60px}
+
+  .panel{background:#fff;border:1px solid var(--beige);border-radius:var(--radio);box-shadow:var(--sombra);padding:22px;margin-bottom:18px}
+  .panel h2{font-size:18px;margin-bottom:16px}
+
+  .campo{margin-bottom:14px}
+  .campo label{display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--texto-claro)}
+  .campo input,.campo textarea,.campo select{width:100%;padding:9px 11px;border:1.5px solid var(--beige);border-radius:8px;font-family:inherit;font-size:14px}
+  .campo input:focus,.campo textarea:focus{outline:none;border-color:var(--dorado)}
+  .fila-campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+
+  .btn{padding:10px 18px;border-radius:999px;border:none;font-weight:600;font-size:13.5px;cursor:pointer}
+  .btn-dorado{background:linear-gradient(135deg,var(--dorado),var(--dorado-profundo));color:#fff}
+  .btn-dorado:disabled{opacity:.5;cursor:not-allowed}
+  .btn-negro{background:var(--negro);color:var(--dorado-suave)}
+  .btn-texto{background:none;color:var(--error);font-size:12.5px;text-decoration:underline;padding:4px}
+  .btn-peq{padding:6px 12px;font-size:12px}
+
+  table.tabla-admin{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.tabla-admin th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--texto-claro);padding:6px 8px;border-bottom:1.5px solid var(--beige)}
+  table.tabla-admin td{padding:6px 8px;border-bottom:1px solid var(--beige);vertical-align:middle}
+  table.tabla-admin input[type=text],table.tabla-admin input[type=number]{width:100%;padding:6px 8px;border:1.5px solid var(--beige);border-radius:6px;font-size:13.5px}
+  table.tabla-admin input[type=number]{max-width:80px}
+  .fila-nueva{background:var(--crema)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}
+  .badge.activo{background:#e5efe7;color:var(--ok)}
+  .badge.inactivo{background:#f3e6e6;color:var(--error)}
+  .chips-servicios{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{display:flex;align-items:center;gap:5px;background:var(--crema);border:1px solid var(--beige);border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer}
+  .chip input{margin:0}
+  .mensaje{font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:12px}
+  .mensaje.ok{background:#e5efe7;color:var(--ok)}
+  .mensaje.error{background:#f3e6e6;color:var(--error)}
+  .ayuda{color:var(--texto-claro);font-size:12.5px;margin-bottom:14px}
+</style>
+</head>
+<body>
+
+<div id="raiz"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+const SUPABASE_URL = "https://fpqefyyykwtdzpaubdhd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwcWVmeXl5a3d0ZHpwYXViZGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0Nzc5MzUsImV4cCI6MjEwOTA1MzkzNX0.1pzYsWG1Jyhn_PyD46AQIyfExk9ZMnrCaf3KvVkIVj4";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const CATEGORIAS = [
+  {id:"peluqueria", nombre:"Peluquería"},
+  {id:"unas", nombre:"Uñas"},
+  {id:"maquillaje", nombre:"Maquillaje"},
+  {id:"belleza", nombre:"Belleza"}
+];
+
+const estado = {
+  sesion: null,
+  esAdmin: null, // null = sin comprobar, true/false ya comprobado
+  tab: "agenda",
+  mensaje: null, // {tipo:'ok'|'error', texto}
+  datos: { servicios:[], profesionales:[], relacion:[], horario:[], negocio:null },
+  fechaAgenda: new Date().toISOString().slice(0,10),
+  citasAgenda: null, // null = sin cargar todavía
+  mostrarNuevaCita: false,
+  informeDesde: primerDiaDelMes(),
+  informeHasta: new Date().toISOString().slice(0,10)
+};
+
+function primerDiaDelMes(){
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0,10);
+}
+
+function sumarDias(fechaISO, n){
+  const d = new Date(fechaISO+"T00:00:00");
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+
+const raiz = document.getElementById("raiz");
+
+/* ===================== LOGIN / SESIÓN ===================== */
+
+function vistaLogin(error){
+  return `
+  <div class="pantalla-login">
+    <div class="caja-login">
+      <h1>María Torres</h1>
+      <div class="subt">Panel de administración</div>
+      ${error ? `<div class="mensaje error">${error}</div>` : ""}
+      <div class="campo"><label>Correo</label><input type="email" id="lCorreo" autocomplete="username"></div>
+      <div class="campo"><label>Contraseña</label><input type="password" id="lClave" autocomplete="current-password"></div>
+      <button class="btn btn-dorado" id="btnEntrar" style="width:100%">Entrar</button>
+    </div>
+  </div>`;
+}
+
+function vistaSinAcceso(correo){
+  return `
+  <div class="pantalla-login">
+    <div class="caja-login" style="text-align:center">
+      <h1>Sin acceso</h1>
+      <p class="ayuda">La cuenta ${correo} no tiene permiso de administrador en esta app.</p>
+      <button class="btn btn-negro" id="btnSalir" style="width:100%">Salir</button>
+    </div>
+  </div>`;
+}
+
+async function comprobarSesion(){
+  const { data: { session } } = await sb.auth.getSession();
+  estado.sesion = session;
+  if(!session){ estado.esAdmin = false; render(); return; }
+  const { data, error } = await sb.from("profiles").select("rol,activo,nombre").eq("id", session.user.id).maybeSingle();
+  estado.esAdmin = !!(data && data.rol === "admin" && data.activo);
+  estado.nombreAdmin = data?.nombre || session.user.email;
+  render();
+}
+
+async function iniciar(){
+  await comprobarSesion();
+  sb.auth.onAuthStateChange((_evt, session) => { estado.sesion = session; });
+}
+
+/* ===================== CARGA DE DATOS ===================== */
+
+async function cargarDatos(){
+  const [sv, pr, rl, hr, ng] = await Promise.all([
+    sb.from("services").select("*").order("categoria").order("orden"),
+    sb.from("professionals").select("*").order("orden"),
+    sb.from("professional_services").select("*"),
+    sb.from("business_hours").select("*").order("dia_semana"),
+    sb.from("business_settings").select("*").maybeSingle()
+  ]);
+  estado.datos.servicios = sv.data || [];
+  estado.datos.profesionales = pr.data || [];
+  estado.datos.relacion = rl.data || [];
+  estado.datos.horario = hr.data || [];
+  estado.datos.negocio = ng.data;
+}
+
+async function cargarCitasAgenda(){
+  const { data, error } = await sb.from("appointments")
+    .select("id,fecha,hora_inicio,hora_fin,estado,precio_total,notas_cliente,clientes(nombre,telefono,email),professionals(nombre),appointment_services(nombre_servicio)")
+    .eq("fecha", estado.fechaAgenda)
+    .order("hora_inicio");
+  if(error){ console.error(error); estado.citasAgenda = []; return; }
+  estado.citasAgenda = data || [];
+}
+
+function mostrarMensaje(tipo, texto){
+  estado.mensaje = { tipo, texto };
+  render();
+  setTimeout(()=>{ estado.mensaje=null; render(); }, 3500);
+}
+
+/* ===================== RENDER PRINCIPAL ===================== */
+
+async function render(){
+  if(estado.esAdmin === null){ raiz.innerHTML = `<div class="pantalla-login"><p class="ayuda">Comprobando acceso…</p></div>`; return; }
+  if(!estado.sesion){ raiz.innerHTML = vistaLogin(estado.errorLogin); enlazarLogin(); return; }
+  if(!estado.esAdmin){ raiz.innerHTML = vistaSinAcceso(estado.sesion.user.email); enlazarSalir(); return; }
+
+  if(!estado.datos.negocio && !estado._cargando){
+    estado._cargando = true;
+    await cargarDatos();
+    estado._cargando = false;
+  }
+  if(estado.tab==="agenda" && estado.citasAgenda===null && !estado._cargandoAgenda){
+    estado._cargandoAgenda = true;
+    await cargarCitasAgenda();
+    estado._cargandoAgenda = false;
+  }
+
+  raiz.innerHTML = `
+    <div class="topbar">
+      <h1>María Torres — Panel de administración</h1>
+      <div><span class="quien">${estado.nombreAdmin}</span> &nbsp; <button class="btn btn-texto" id="btnSalir" style="color:var(--dorado-suave)">Salir</button></div>
+    </div>
+    <div class="tabs">
+      ${["agenda","informes","negocio","servicios","profesionales","horario"].map(t=>`
+        <button class="tab-btn ${estado.tab===t?'activa':''}" data-tab="${t}">${etiquetaTab(t)}</button>
+      `).join("")}
+    </div>
+    <div class="contenedor">
+      ${estado.mensaje ? `<div class="mensaje ${estado.mensaje.tipo}">${estado.mensaje.texto}</div>` : ""}
+      ${estado.tab==="agenda" ? vistaAgenda() : ""}
+      ${estado.tab==="informes" ? vistaInformes() : ""}
+      ${estado.tab==="negocio" ? vistaNegocio() : ""}
+      ${estado.tab==="servicios" ? vistaServicios() : ""}
+      ${estado.tab==="profesionales" ? vistaProfesionales() : ""}
+      ${estado.tab==="horario" ? vistaHorario() : ""}
+    </div>`;
+  enlazarSalir();
+  document.querySelectorAll(".tab-btn").forEach(b=>b.onclick=()=>{
+    estado.tab=b.dataset.tab;
+    if(estado.tab==="agenda") estado.citasAgenda = null;
+    render();
+  });
+  if(estado.tab==="agenda") enlazarAgenda();
+  if(estado.tab==="informes") enlazarInformes();
+  if(estado.tab==="negocio") enlazarNegocio();
+  if(estado.tab==="servicios") enlazarServicios();
+  if(estado.tab==="profesionales") enlazarProfesionales();
+  if(estado.tab==="horario") enlazarHorario();
+}
+
+function etiquetaTab(t){
+  return {agenda:"Agenda", informes:"Informes", negocio:"Datos del negocio", servicios:"Servicios y precios", profesionales:"Profesionales", horario:"Horario"}[t];
+}
+
+function enlazarLogin(){
+  const btn = document.getElementById("btnEntrar");
+  btn.onclick = async ()=>{
+    btn.disabled = true; btn.textContent = "Entrando…";
+    const correo = document.getElementById("lCorreo").value.trim();
+    const clave = document.getElementById("lClave").value;
+    const { data, error } = await sb.auth.signInWithPassword({ email: correo, password: clave });
+    if(error){
+      estado.errorLogin = "Correo o contraseña incorrectos.";
+      render();
+      return;
+    }
+    estado.sesion = data.session;
+    estado.errorLogin = null;
+    await comprobarSesion();
+  };
+}
+
+function enlazarSalir(){
+  const btn = document.getElementById("btnSalir");
+  if(btn) btn.onclick = async ()=>{
+    await sb.auth.signOut();
+    estado.sesion = null; estado.esAdmin = false; estado.datos = { servicios:[], profesionales:[], relacion:[], horario:[], negocio:null };
+    render();
+  };
+}
+
+/* ===================== AGENDA ===================== */
+
+function etiquetaEstadoCita(e){
+  return {pendiente:"Pendiente", confirmada:"Confirmada", cancelada:"Cancelada", completada:"Completada"}[e] || e;
+}
+
+function filaCita(c){
+  const servicios = (c.appointment_services||[]).map(s=>s.nombre_servicio).join(", ");
+  const acciones = [];
+  if(c.estado==="pendiente"){
+    acciones.push(`<button class="btn btn-peq btn-dorado cambiar-estado" data-id="${c.id}" data-estado="confirmada">Confirmar</button>`);
+    acciones.push(`<button class="btn btn-peq btn-texto cambiar-estado" data-id="${c.id}" data-estado="cancelada">Cancelar</button>`);
+  } else if(c.estado==="confirmada"){
+    acciones.push(`<button class="btn btn-peq btn-dorado cambiar-estado" data-id="${c.id}" data-estado="completada">Completada</button>`);
+    acciones.push(`<button class="btn btn-peq btn-texto cambiar-estado" data-id="${c.id}" data-estado="cancelada">Cancelar</button>`);
+  }
+  return `<tr>
+    <td>${c.hora_inicio.slice(0,5)}–${c.hora_fin.slice(0,5)}</td>
+    <td>${c.clientes?.nombre||"—"}<br><span style="color:var(--texto-claro);font-size:11.5px">${c.clientes?.telefono||""}</span></td>
+    <td>${c.professionals?.nombre||"—"}</td>
+    <td style="font-size:12.5px">${servicios}</td>
+    <td>${Number(c.precio_total).toFixed(2)} €</td>
+    <td><span class="badge ${c.estado==='cancelada'?'inactivo':'activo'}">${etiquetaEstadoCita(c.estado)}</span></td>
+    <td style="white-space:nowrap">${acciones.join(" ")}</td>
+  </tr>`;
+}
+
+function vistaAgenda(){
+  const citas = estado.citasAgenda || [];
+  return `
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <h2>Agenda del día</h2>
+      <button class="btn btn-dorado btn-peq" id="btnAbrirNuevaCita">+ Nueva cita</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:14px 0;flex-wrap:wrap">
+      <button class="btn btn-texto" id="btnDiaAnterior" style="color:var(--texto)">← Anterior</button>
+      <input type="date" id="fechaAgendaInput" value="${estado.fechaAgenda}">
+      <button class="btn btn-texto" id="btnDiaSiguiente" style="color:var(--texto)">Siguiente →</button>
+    </div>
+    ${estado._cargandoAgenda ? `<p class="ayuda">Cargando…</p>` : citas.length===0 ? `<p class="ayuda">No hay citas este día.</p>` : `
+    <div style="overflow-x:auto">
+    <table class="tabla-admin">
+      <tr><th>Hora</th><th>Cliente</th><th>Profesional</th><th>Servicios</th><th>Precio</th><th>Estado</th><th></th></tr>
+      ${citas.map(c=>filaCita(c)).join("")}
+    </table>
+    </div>`}
+  </div>
+  ${estado.mostrarNuevaCita ? panelNuevaCita() : ""}`;
+}
+
+function panelNuevaCita(){
+  return `
+  <div class="panel">
+    <h2>Nueva cita</h2>
+    <p class="ayuda">Para apuntar una reserva hecha por teléfono o en persona. Se comprueba la disponibilidad igual que en la web.</p>
+    <div class="fila-campos">
+      <div class="campo"><label>Nombre del cliente</label><input id="ncNombre"></div>
+      <div class="campo"><label>Teléfono</label><input id="ncTelefono"></div>
+      <div class="campo"><label>Correo (opcional)</label><input id="ncEmail"></div>
+    </div>
+    <div class="campo"><label>Servicios</label>
+      <div class="chips-servicios">
+        ${estado.datos.servicios.filter(s=>s.activo).map(s=>`<label class="chip"><input type="checkbox" class="ncServicio" value="${s.id}"> ${s.nombre} (${s.precio}€)</label>`).join("")}
+      </div>
+    </div>
+    <div class="fila-campos">
+      <div class="campo"><label>Profesional</label>
+        <select id="ncProfesional">
+          <option value="">El primero disponible</option>
+          ${estado.datos.profesionales.filter(p=>p.activo).map(p=>`<option value="${p.id}">${p.nombre}</option>`).join("")}
+        </select>
+      </div>
+      <div class="campo"><label>Fecha</label><input type="date" id="ncFecha" value="${estado.fechaAgenda}"></div>
+      <div class="campo"><label>Hora (ej. 10:00)</label><input type="text" id="ncHora" placeholder="10:00"></div>
+    </div>
+    <button class="btn btn-dorado" id="btnCrearCita">Crear cita</button>
+    <button class="btn btn-texto" id="btnCancelarNuevaCita">Cancelar</button>
+  </div>`;
+}
+
+function enlazarAgenda(){
+  document.getElementById("fechaAgendaInput").onchange = async (e)=>{
+    estado.fechaAgenda = e.target.value;
+    estado.citasAgenda = null;
+    render();
+  };
+  document.getElementById("btnDiaAnterior").onclick = ()=>{
+    estado.fechaAgenda = sumarDias(estado.fechaAgenda, -1);
+    estado.citasAgenda = null;
+    render();
+  };
+  document.getElementById("btnDiaSiguiente").onclick = ()=>{
+    estado.fechaAgenda = sumarDias(estado.fechaAgenda, 1);
+    estado.citasAgenda = null;
+    render();
+  };
+  document.getElementById("btnAbrirNuevaCita").onclick = ()=>{ estado.mostrarNuevaCita = true; render(); };
+  const btnCancelarNueva = document.getElementById("btnCancelarNuevaCita");
+  if(btnCancelarNueva) btnCancelarNueva.onclick = ()=>{ estado.mostrarNuevaCita = false; render(); };
+
+  document.querySelectorAll(".cambiar-estado").forEach(btn=>btn.onclick = async ()=>{
+    btn.disabled = true;
+    const { error } = await sb.from("appointments").update({ estado: btn.dataset.estado }).eq("id", btn.dataset.id);
+    if(error){ mostrarMensaje("error", "No se pudo actualizar: " + error.message); return; }
+    estado.citasAgenda = null;
+    await cargarCitasAgenda();
+    mostrarMensaje("ok", "Cita actualizada.");
+  });
+
+  const btnCrear = document.getElementById("btnCrearCita");
+  if(btnCrear) btnCrear.onclick = async ()=>{
+    const nombre = document.getElementById("ncNombre").value.trim();
+    const telefono = document.getElementById("ncTelefono").value.trim();
+    const servicios = Array.from(document.querySelectorAll(".ncServicio:checked")).map(c=>c.value);
+    const profesionalId = document.getElementById("ncProfesional").value || null;
+    const fecha = document.getElementById("ncFecha").value;
+    const hora = document.getElementById("ncHora").value.trim();
+    if(!nombre || !telefono || servicios.length===0 || !fecha || !hora){
+      mostrarMensaje("error", "Faltan datos: nombre, teléfono, al menos un servicio, fecha y hora.");
+      return;
+    }
+    btnCrear.disabled = true; btnCrear.textContent = "Creando…";
+    const { error } = await sb.rpc("crear_cita", {
+      p_nombre: nombre, p_telefono: telefono,
+      p_email: document.getElementById("ncEmail").value.trim() || null,
+      p_acepta_marketing: false, p_notas: null,
+      p_profesional_id: profesionalId, p_servicios_ids: servicios,
+      p_fecha: fecha, p_hora_inicio: hora
+    });
+    if(error){ mostrarMensaje("error", "No se pudo crear: " + error.message); btnCrear.disabled=false; btnCrear.textContent="Crear cita"; return; }
+    estado.mostrarNuevaCita = false;
+    estado.fechaAgenda = fecha;
+    estado.citasAgenda = null;
+    await cargarCitasAgenda();
+    mostrarMensaje("ok", "Cita creada.");
+  };
+}
+
+/* ===================== INFORMES ===================== */
+
+function vistaInformes(){
+  return `
+  <div class="panel">
+    <h2>Citas e ingresos previstos</h2>
+    <p class="ayuda">Descarga un Excel con todas las citas del periodo elegido y un resumen de ingresos. "Previstos" porque es el precio de la cita, no si ya se ha cobrado.</p>
+    <div class="fila-campos">
+      <div class="campo"><label>Desde</label><input type="date" id="infDesde" value="${estado.informeDesde}"></div>
+      <div class="campo"><label>Hasta</label><input type="date" id="infHasta" value="${estado.informeHasta}"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="btn btn-peq btn-texto" id="btnRangoHoy" style="color:var(--texto)">Hoy</button>
+      <button class="btn btn-peq btn-texto" id="btnRangoSemana" style="color:var(--texto)">Esta semana</button>
+      <button class="btn btn-peq btn-texto" id="btnRangoMes" style="color:var(--texto)">Este mes</button>
+    </div>
+    <button class="btn btn-dorado" id="btnDescargarExcel">⬇ Descargar Excel</button>
+    <div id="resumenInforme" style="margin-top:18px"></div>
+  </div>`;
+}
+
+function inicioSemana(fechaISO){
+  const d = new Date(fechaISO+"T00:00:00");
+  const diff = (d.getDay()+6)%7; // lunes=0
+  d.setDate(d.getDate()-diff);
+  return d.toISOString().slice(0,10);
+}
+
+function enlazarInformes(){
+  document.getElementById("btnRangoHoy").onclick = ()=>{
+    const hoy = new Date().toISOString().slice(0,10);
+    estado.informeDesde = hoy; estado.informeHasta = hoy; render();
+  };
+  document.getElementById("btnRangoSemana").onclick = ()=>{
+    const hoy = new Date().toISOString().slice(0,10);
+    estado.informeDesde = inicioSemana(hoy); estado.informeHasta = sumarDias(inicioSemana(hoy),6); render();
+  };
+  document.getElementById("btnRangoMes").onclick = ()=>{
+    estado.informeDesde = primerDiaDelMes(); estado.informeHasta = new Date().toISOString().slice(0,10); render();
+  };
+  document.getElementById("infDesde").onchange = (e)=>{ estado.informeDesde = e.target.value; };
+  document.getElementById("infHasta").onchange = (e)=>{ estado.informeHasta = e.target.value; };
+
+  document.getElementById("btnDescargarExcel").onclick = async (e)=>{
+    const btn = e.target; btn.disabled = true; btn.textContent = "Preparando…";
+    const desde = document.getElementById("infDesde").value;
+    const hasta = document.getElementById("infHasta").value;
+    const { data, error } = await sb.from("appointments")
+      .select("fecha,hora_inicio,hora_fin,estado,precio_total,clientes(nombre,telefono),professionals(nombre),appointment_services(nombre_servicio)")
+      .gte("fecha", desde).lte("fecha", hasta)
+      .order("fecha").order("hora_inicio");
+    btn.disabled = false; btn.textContent = "⬇ Descargar Excel";
+    if(error){ mostrarMensaje("error", "No se pudo generar: " + error.message); return; }
+    if(!data.length){ mostrarMensaje("error", "No hay citas en ese periodo."); return; }
+    generarExcel(data, desde, hasta);
+  };
+}
+
+function generarExcel(citas, desde, hasta){
+  const filas = citas.map(c=>({
+    "Fecha": c.fecha,
+    "Hora": c.hora_inicio.slice(0,5) + "–" + c.hora_fin.slice(0,5),
+    "Cliente": c.clientes?.nombre || "",
+    "Teléfono": c.clientes?.telefono || "",
+    "Profesional": c.professionals?.nombre || "",
+    "Servicios": (c.appointment_services||[]).map(s=>s.nombre_servicio).join(", "),
+    "Precio €": Number(c.precio_total),
+    "Estado": etiquetaEstadoCita(c.estado)
+  }));
+
+  const cuentan = citas.filter(c=>c.estado!=="cancelada");
+  const ingresos = cuentan.reduce((a,c)=>a+Number(c.precio_total),0);
+  const porEstado = {};
+  citas.forEach(c=>{ porEstado[c.estado] = (porEstado[c.estado]||0)+1; });
+
+  const resumen = [
+    { "Resumen del periodo": `${desde} a ${hasta}` },
+    {},
+    { "Resumen del periodo": "Total de citas", "": citas.length },
+    { "Resumen del periodo": "Ingresos previstos (sin canceladas)", "": ingresos.toFixed(2) + " €" },
+    {},
+    ...Object.entries(porEstado).map(([estado,n])=>({ "Resumen del periodo": etiquetaEstadoCita(estado), "": n }))
+  ];
+
+  const libro = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(filas), "Citas");
+  XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(resumen), "Resumen");
+  XLSX.writeFile(libro, `citas_${desde}_a_${hasta}.xlsx`);
+
+  document.getElementById("resumenInforme").innerHTML = `
+    <div class="mensaje ok">${citas.length} citas · ${ingresos.toFixed(2)} € previstos (sin contar canceladas)</div>`;
+}
+
+/* ===================== NEGOCIO ===================== */
+
+function vistaNegocio(){
+  const n = estado.datos.negocio || {};
+  return `
+  <div class="panel">
+    <h2>Datos del negocio</h2>
+    <p class="ayuda">Esto es lo que ven tus clientas en la web, en "Inicio" y "Ubicación".</p>
+    <div class="campo"><label>Nombre del negocio</label><input id="nNombre" value="${n.nombre_negocio||""}"></div>
+    <div class="fila-campos">
+      <div class="campo"><label>Teléfono</label><input id="nTelefono" value="${n.telefono||""}"></div>
+      <div class="campo"><label>Correo de contacto</label><input id="nEmail" value="${n.email_contacto||""}"></div>
+    </div>
+    <div class="campo"><label>Dirección</label><input id="nDireccion" value="${n.direccion||""}"></div>
+    <div class="fila-campos">
+      <div class="campo"><label>Instagram (enlace completo)</label><input id="nInstagram" value="${n.instagram_url||""}" placeholder="https://instagram.com/tunegocio"></div>
+      <div class="campo"><label>TikTok (enlace completo)</label><input id="nTiktok" value="${n.tiktok_url||""}" placeholder="https://tiktok.com/@tunegocio"></div>
+    </div>
+    <p class="ayuda">El botón de WhatsApp se calcula solo a partir del teléfono de arriba, no hace falta ponerlo aparte.</p>
+    <div class="campo"><label>Política de privacidad (texto que se muestra al reservar)</label><textarea id="nPrivacidad" rows="3">${n.texto_politica_privacidad||""}</textarea></div>
+    <button class="btn btn-dorado" id="btnGuardarNegocio">Guardar cambios</button>
+  </div>`;
+}
+
+function enlazarNegocio(){
+  document.getElementById("btnGuardarNegocio").onclick = async (e)=>{
+    const btn = e.target; btn.disabled = true; btn.textContent = "Guardando…";
+    const { error } = await sb.from("business_settings").update({
+      nombre_negocio: document.getElementById("nNombre").value.trim(),
+      telefono: document.getElementById("nTelefono").value.trim(),
+      email_contacto: document.getElementById("nEmail").value.trim(),
+      direccion: document.getElementById("nDireccion").value.trim(),
+      instagram_url: document.getElementById("nInstagram").value.trim() || null,
+      tiktok_url: document.getElementById("nTiktok").value.trim() || null,
+      texto_politica_privacidad: document.getElementById("nPrivacidad").value.trim()
+    }).eq("id", true);
+    if(error){ mostrarMensaje("error", "No se pudo guardar: " + error.message); return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Datos del negocio guardados.");
+  };
+}
+
+/* ===================== SERVICIOS ===================== */
+
+function vistaServicios(){
+  const filas = estado.datos.servicios.map(s=>`
+    <tr data-id="${s.id}">
+      <td><input type="text" class="sNombre" value="${s.nombre}"></td>
+      <td><select class="sCategoria">${CATEGORIAS.map(c=>`<option value="${c.id}" ${c.id===s.categoria?"selected":""}>${c.nombre}</option>`).join("")}</select></td>
+      <td><input type="number" class="sPrecio" value="${s.precio}" min="0" step="0.5"></td>
+      <td><input type="number" class="sDuracion" value="${s.duracion_minutos}" min="5" step="5"></td>
+      <td style="text-align:center"><input type="checkbox" class="sActivo" ${s.activo?"checked":""}></td>
+      <td><button class="btn btn-peq btn-dorado guardar-servicio">Guardar</button></td>
+    </tr>`).join("");
+  return `
+  <div class="panel">
+    <h2>Servicios y precios</h2>
+    <p class="ayuda">Cambia el precio, la duración o desactívalo (deja de verse en la web) sin borrar su historial.</p>
+    <table class="tabla-admin">
+      <tr><th>Nombre</th><th>Categoría</th><th>Precio €</th><th>Minutos</th><th>Activo</th><th></th></tr>
+      ${filas}
+      <tr class="fila-nueva">
+        <td><input type="text" id="nuevoNombre" placeholder="Nombre del servicio"></td>
+        <td><select id="nuevoCategoria">${CATEGORIAS.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join("")}</select></td>
+        <td><input type="number" id="nuevoPrecio" placeholder="0" min="0" step="0.5"></td>
+        <td><input type="number" id="nuevoDuracion" placeholder="30" min="5" step="5"></td>
+        <td></td>
+        <td><button class="btn btn-peq btn-negro" id="btnNuevoServicio">+ Añadir</button></td>
+      </tr>
+    </table>
+  </div>`;
+}
+
+function enlazarServicios(){
+  document.querySelectorAll(".guardar-servicio").forEach(btn=>btn.onclick = async ()=>{
+    const tr = btn.closest("tr");
+    const id = tr.dataset.id;
+    btn.disabled = true; btn.textContent = "...";
+    const { error } = await sb.from("services").update({
+      nombre: tr.querySelector(".sNombre").value.trim(),
+      categoria: tr.querySelector(".sCategoria").value,
+      precio: Number(tr.querySelector(".sPrecio").value),
+      duracion_minutos: Number(tr.querySelector(".sDuracion").value),
+      activo: tr.querySelector(".sActivo").checked
+    }).eq("id", id);
+    if(error){ mostrarMensaje("error", "No se pudo guardar: " + error.message); return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Servicio guardado.");
+  });
+  document.getElementById("btnNuevoServicio").onclick = async ()=>{
+    const nombre = document.getElementById("nuevoNombre").value.trim();
+    const precio = Number(document.getElementById("nuevoPrecio").value);
+    const duracion = Number(document.getElementById("nuevoDuracion").value);
+    if(!nombre || !precio || !duracion){ mostrarMensaje("error", "Pon nombre, precio y duración del nuevo servicio."); return; }
+    const { error } = await sb.from("services").insert({
+      nombre, categoria: document.getElementById("nuevoCategoria").value,
+      precio, duracion_minutos: duracion, activo: true, orden: 99
+    });
+    if(error){ mostrarMensaje("error", "No se pudo crear: " + error.message); return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Servicio añadido.");
+  };
+}
+
+/* ===================== PROFESIONALES ===================== */
+
+function vistaProfesionales(){
+  const tarjetas = estado.datos.profesionales.map(p=>{
+    const misServicios = estado.datos.relacion.filter(r=>r.professional_id===p.id).map(r=>r.service_id);
+    return `
+    <div class="panel" data-id="${p.id}">
+      <div class="fila-campos" style="align-items:end">
+        <div class="campo"><label>Nombre</label><input type="text" class="pNombre" value="${p.nombre}"></div>
+        <label style="display:flex;align-items:center;gap:6px;margin-bottom:14px"><input type="checkbox" class="pActivo" ${p.activo?"checked":""}> Activo</label>
+      </div>
+      <label style="font-size:12.5px;font-weight:600;color:var(--texto-claro)">Servicios que realiza</label>
+      <div class="chips-servicios">
+        ${estado.datos.servicios.map(s=>`
+          <label class="chip"><input type="checkbox" class="pServicio" value="${s.id}" ${misServicios.includes(s.id)?"checked":""}> ${s.nombre}</label>
+        `).join("")}
+      </div>
+      <div style="margin-top:14px"><button class="btn btn-peq btn-dorado guardar-profesional">Guardar</button></div>
+    </div>`;
+  }).join("");
+  return `
+  <div class="panel">
+    <h2>Añadir profesional</h2>
+    <div class="fila-campos">
+      <div class="campo"><label>Nombre</label><input type="text" id="nuevoProNombre"></div>
+    </div>
+    <button class="btn btn-negro" id="btnNuevoProfesional">+ Añadir profesional</button>
+  </div>
+  ${tarjetas}`;
+}
+
+function enlazarProfesionales(){
+  document.getElementById("btnNuevoProfesional").onclick = async ()=>{
+    const nombre = document.getElementById("nuevoProNombre").value.trim();
+    if(!nombre){ mostrarMensaje("error", "Pon el nombre del profesional."); return; }
+    const { error } = await sb.from("professionals").insert({ nombre, activo:true, orden:99 });
+    if(error){ mostrarMensaje("error", "No se pudo crear: " + error.message); return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Profesional añadido.");
+  };
+  document.querySelectorAll(".guardar-profesional").forEach(btn=>btn.onclick = async ()=>{
+    const panel = btn.closest(".panel");
+    const id = panel.dataset.id;
+    btn.disabled = true; btn.textContent = "...";
+    const nombre = panel.querySelector(".pNombre").value.trim();
+    const activo = panel.querySelector(".pActivo").checked;
+    const serviciosElegidos = Array.from(panel.querySelectorAll(".pServicio:checked")).map(c=>c.value);
+
+    const r1 = await sb.from("professionals").update({ nombre, activo }).eq("id", id);
+    const r2 = await sb.from("professional_services").delete().eq("professional_id", id);
+    const r3 = serviciosElegidos.length
+      ? await sb.from("professional_services").insert(serviciosElegidos.map(sid=>({ professional_id:id, service_id:sid })))
+      : { error:null };
+    const error = r1.error || r2.error || r3.error;
+    if(error){ mostrarMensaje("error", "No se pudo guardar: " + error.message); return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Profesional guardado.");
+  });
+}
+
+/* ===================== HORARIO ===================== */
+
+const DIAS = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+
+function vistaHorario(){
+  const filas = DIAS.map((nombre,i)=>{
+    const h = estado.datos.horario.find(x=>x.dia_semana===i);
+    return `
+    <tr data-dia="${i}">
+      <td>${nombre}</td>
+      <td style="text-align:center"><input type="checkbox" class="hCerrado" ${h?"":"checked"}></td>
+      <td><input type="text" class="hInicio" value="${h?h.hora_inicio.slice(0,5):"09:00"}" placeholder="09:00" ${h?"":"disabled"}></td>
+      <td><input type="text" class="hFin" value="${h?h.hora_fin.slice(0,5):"20:00"}" placeholder="20:00" ${h?"":"disabled"}></td>
+    </tr>`;
+  }).join("");
+  return `
+  <div class="panel">
+    <h2>Horario de apertura</h2>
+    <p class="ayuda">Formato 24h, por ejemplo 09:00 y 20:00. Marca "Cerrado" en los días que no abrís.</p>
+    <table class="tabla-admin">
+      <tr><th>Día</th><th>Cerrado</th><th>Abre</th><th>Cierra</th></tr>
+      ${filas}
+    </table>
+    <button class="btn btn-dorado" id="btnGuardarHorario" style="margin-top:14px">Guardar horario</button>
+  </div>`;
+}
+
+function enlazarHorario(){
+  document.querySelectorAll(".hCerrado").forEach(chk=>chk.onchange=()=>{
+    const tr = chk.closest("tr");
+    tr.querySelector(".hInicio").disabled = chk.checked;
+    tr.querySelector(".hFin").disabled = chk.checked;
+  });
+  document.getElementById("btnGuardarHorario").onclick = async (e)=>{
+    const btn = e.target; btn.disabled = true; btn.textContent = "Guardando…";
+    const abiertos = [];
+    document.querySelectorAll("#raiz tr[data-dia]").forEach(tr=>{
+      const dia = Number(tr.dataset.dia);
+      const cerrado = tr.querySelector(".hCerrado").checked;
+      if(!cerrado){
+        abiertos.push({ dia_semana: dia, hora_inicio: tr.querySelector(".hInicio").value, hora_fin: tr.querySelector(".hFin").value });
+      }
+    });
+    const r1 = await sb.from("business_hours").delete().gte("dia_semana", 0);
+    const r2 = abiertos.length ? await sb.from("business_hours").insert(abiertos) : { error:null };
+    const error = r1.error || r2.error;
+    if(error){ mostrarMensaje("error", "No se pudo guardar: " + error.message); return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Horario guardado.");
+  };
+}
+
+iniciar();
+</script>
+</body>
+</html>

@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>María Torres Peluquería y Estética</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --crema:#f7f2e9;
+    --beige:#ece3d2;
+    --negro:#17140f;
+    --negro-suave:#26221a;
+    --dorado:#b8903f;
+    --dorado-suave:#e6d4a3;
+    --dorado-profundo:#8a6a2e;
+    --texto:#2b2620;
+    --texto-claro:#796f5e;
+    --ok:#4a7c59;
+    --error:#a14545;
+    --radio:14px;
+    --sombra:0 14px 34px rgba(23,20,15,.1);
+    --sombra-suave:0 6px 18px rgba(23,20,15,.07);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--crema);
+    color:var(--texto);
+    font-family:'Poppins',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Playfair Display',serif;margin:0;font-weight:600;letter-spacing:.2px}
+  a{color:inherit}
+  button{font-family:inherit}
+  img{max-width:100%;display:block}
+
+  .titulo-seccion{position:relative;padding-bottom:16px;margin-bottom:8px}
+  .titulo-seccion::after{
+    content:"";position:absolute;left:0;bottom:0;width:48px;height:2px;
+    background:linear-gradient(90deg,var(--dorado),var(--dorado-profundo));
+  }
+
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease, transform .7s ease}
+  .reveal.visible{opacity:1;transform:translateY(0)}
+
+  /* ===== Estructura: barra lateral + contenido ===== */
+  .app-shell{display:flex;min-height:100vh;align-items:flex-start}
+
+  .sidebar{
+    width:230px;flex:0 0 230px;
+    background:linear-gradient(180deg,var(--negro) 0%,var(--negro-suave) 100%);
+    color:var(--dorado-suave);
+    padding:28px 18px;
+    position:sticky;top:0;align-self:flex-start;height:100vh;
+    display:flex;flex-direction:column;gap:34px;
+    border-right:3px solid var(--dorado);
+    z-index:30;
+  }
+  .sidebar .marca h1{color:#fff;font-size:22px;line-height:1.25;letter-spacing:.3px}
+  .sidebar .marca .subt{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--dorado-suave);margin-top:8px}
+  .sidebar .marca .linea{width:34px;height:1px;background:linear-gradient(90deg,var(--dorado),transparent);margin-top:16px}
+
+  .nav-lateral{display:flex;flex-direction:column;gap:2px}
+  .nav-link{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 14px;border-radius:2px;
+    color:rgba(230,212,163,.65);text-decoration:none;
+    font-size:11.5px;font-weight:500;letter-spacing:1.6px;text-transform:uppercase;
+    border-left:2px solid transparent;transition:.25s;
+  }
+  .nav-link:hover{color:var(--dorado-suave);border-left-color:rgba(184,144,63,.4)}
+  .nav-link.activo{color:#fff;border-left-color:var(--dorado)}
+  .nav-link.destacado{
+    margin-top:auto;background:transparent;color:var(--dorado);
+    font-weight:600;justify-content:center;border:1px solid var(--dorado);
+    border-radius:2px;padding:13px 14px;
+  }
+  .nav-link.destacado:hover{background:var(--dorado);color:var(--negro)}
+
+  .redes{display:flex;gap:10px;margin-top:auto;padding-top:20px}
+  .redes a{
+    width:36px;height:36px;border-radius:50%;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.07);color:var(--dorado-suave);
+    text-decoration:none;transition:.2s;
+  }
+  .redes a:hover{background:var(--dorado);color:var(--negro)}
+  .redes svg{width:17px;height:17px;fill:currentColor}
+
+  .contenido{flex:1;min-width:0}
+  .seccion{padding:64px 44px;max-width:900px;margin:0 auto;scroll-margin-top:20px}
+  .seccion + .seccion{border-top:1px solid var(--beige)}
+
+  /* ===== Inicio ===== */
+  .hero{text-align:left;padding-top:10px}
+  .hero .eyebrow{
+    display:block;font-size:11px;letter-spacing:3.5px;text-transform:uppercase;
+    color:var(--dorado-profundo);font-weight:600;margin-bottom:18px;
+  }
+  .hero h2{font-size:clamp(30px,4.4vw,44px);line-height:1.18;max-width:15ch;font-weight:600}
+  .hero .divisor{width:60px;height:1.5px;background:linear-gradient(90deg,var(--dorado),var(--dorado-profundo));margin:26px 0}
+  .hero p.lead{font-size:15.5px;color:var(--texto-claro);max-width:50ch;margin:0 0 30px;line-height:1.75;font-weight:300}
+  .hero .cta{
+    display:inline-block;text-transform:uppercase;font-size:12.5px;
+    letter-spacing:1.8px;padding:15px 34px;
+  }
+  .franja-horario{
+    margin-top:44px;display:flex;flex-wrap:wrap;gap:12px 30px;
+    padding:22px 26px;background:#fff;border-radius:2px;border:1px solid var(--beige);
+    border-left:3px solid var(--dorado);
+  }
+  .franja-horario div{font-size:13px;color:var(--texto-claro)}
+  .franja-horario b{color:var(--texto);display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px;font-weight:600}
+
+  /* ===== Trabajos ===== */
+  .aviso-ejemplo{
+    font-size:12.5px;color:var(--texto-claro);background:var(--beige);
+    border-radius:10px;padding:8px 12px;margin-bottom:22px;display:inline-block;
+  }
+  .trabajos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+  .trabajo-card{
+    aspect-ratio:1;border-radius:4px;position:relative;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:flex-end;padding:16px;
+    color:#fff;transition:.3s;
+  }
+  .trabajo-card::before{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.45) 100%);
+  }
+  .trabajo-card:hover{transform:translateY(-4px);box-shadow:var(--sombra)}
+  .trabajo-card .emoji{font-size:28px;position:absolute;top:16px;left:16px;opacity:.95;z-index:1}
+  .trabajo-card .cap{font-size:12.5px;font-weight:600;letter-spacing:.3px;position:relative;z-index:1}
+
+  /* ===== Ubicación ===== */
+  .ubicacion-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:30px;align-items:start}
+  .datos-contacto .fila-dato{display:flex;gap:12px;margin-bottom:16px;font-size:14px}
+  .datos-contacto .fila-dato .icono{font-size:18px;flex:0 0 auto}
+  .datos-contacto .fila-dato b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--texto-claro);margin-bottom:2px}
+  .horario-tabla{width:100%;border-collapse:collapse;margin-top:18px;font-size:13.5px}
+  .horario-tabla td{padding:6px 0;border-bottom:1px dashed var(--beige)}
+  .horario-tabla td:last-child{text-align:right;color:var(--texto-claro)}
+  .mapa-placeholder{
+    background:var(--beige);border:1.5px dashed #d2c6a8;border-radius:var(--radio);
+    min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:var(--texto-claro);gap:8px;text-align:center;padding:20px;font-size:13px;
+  }
+  .mapa-placeholder .pin{font-size:30px}
+
+  /* ===== Reservar: pasos apilados ===== */
+  .seccion-reservar h2{margin-bottom:6px}
+  .intro-reserva{color:var(--texto-claro);font-size:14px;margin-bottom:26px}
+
+  .pasos{display:flex;gap:6px;margin-bottom:28px;flex-wrap:wrap}
+  .paso-indicador{
+    display:flex;align-items:center;gap:8px;
+    padding:8px 14px;border-radius:999px;
+    background:var(--beige);color:var(--texto-claro);
+    font-size:13px;font-weight:600;transition:all .3s ease;
+  }
+  .paso-indicador .num{
+    width:22px;height:22px;border-radius:50%;flex:0 0 auto;
+    background:#fff;color:var(--texto-claro);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;border:1px solid #d8cdb3;
+  }
+  .paso-indicador.activo{background:var(--negro);color:#fff}
+  .paso-indicador.activo .num{background:var(--dorado);color:var(--negro);border-color:var(--dorado)}
+  .paso-indicador.hecho .num{background:var(--ok);color:#fff;border-color:var(--ok)}
+
+  .paso-resumen{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    border:1.5px solid var(--beige);border-radius:12px;
+    padding:14px 16px;margin-bottom:14px;background:#fffdfa;
+  }
+  .paso-resumen .num-check{
+    width:26px;height:26px;border-radius:50%;background:var(--ok);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto;
+  }
+  .paso-resumen .texto{flex:1;min-width:0}
+  .paso-resumen .texto b{display:block;font-size:11.5px;color:var(--texto-claro);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+  .paso-resumen .texto span{font-size:14px;color:var(--texto)}
+  .paso-resumen button{background:none;border:none;color:var(--dorado);font-weight:600;font-size:13px;cursor:pointer;text-decoration:underline;flex:0 0 auto}
+
+  .panel{
+    background:#fff;border-radius:var(--radio);box-shadow:var(--sombra-suave);
+    border:1px solid var(--beige);
+    padding:26px;margin-bottom:14px;animation:aparecer .35s ease;
+  }
+  @keyframes aparecer{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .panel h3{font-size:19px;margin-bottom:4px}
+  .panel .ayuda{color:var(--texto-claro);font-size:13.5px;margin-bottom:18px}
+
+  .categorias{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:18px}
+  .cat-btn{
+    flex:0 0 auto;padding:8px 16px;border-radius:999px;border:1.5px solid var(--beige);
+    background:#fff;color:var(--texto);font-size:13.5px;font-weight:500;
+    cursor:pointer;transition:.2s;white-space:nowrap;
+  }
+  .cat-btn.activa{background:var(--negro);border-color:var(--negro);color:var(--dorado-suave)}
+
+  .lista-servicios{display:grid;gap:12px}
+  .tarjeta-servicio{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    border:1.5px solid var(--beige);border-radius:var(--radio);
+    padding:14px;cursor:pointer;transition:.2s;background:#fffdfa;
+  }
+  .tarjeta-servicio:hover{border-color:var(--dorado-suave);transform:translateY(-1px);box-shadow:var(--sombra-suave)}
+  .tarjeta-servicio.seleccionada{border-color:var(--dorado);background:#fbf6ea;box-shadow:0 6px 18px rgba(138,106,46,.16)}
+  .tarjeta-servicio .icono{
+    font-size:26px;width:48px;height:48px;flex:0 0 48px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--beige);border-radius:50%;
+  }
+  .tarjeta-servicio .info{flex:1;min-width:120px}
+  .tarjeta-servicio .info h4{font-size:16px;font-family:'Playfair Display',serif}
+  .tarjeta-servicio .info p{margin:2px 0 0;font-size:12.5px;color:var(--texto-claro)}
+  .tarjeta-servicio .precio-dur{text-align:right;flex:0 0 auto}
+  .tarjeta-servicio .precio{font-weight:600;font-size:15px;color:var(--negro)}
+  .tarjeta-servicio .dur{font-size:12px;color:var(--texto-claro)}
+  .marca-check{
+    width:22px;height:22px;border-radius:50%;border:1.5px solid #d8cdb3;
+    flex:0 0 22px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;
+  }
+  .tarjeta-servicio.seleccionada .marca-check{background:var(--dorado);border-color:var(--dorado)}
+
+  .lista-profesionales{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .tarjeta-pro{
+    border:1.5px solid var(--beige);border-radius:var(--radio);
+    padding:16px 10px;text-align:center;cursor:pointer;transition:.2s;background:#fffdfa;
+  }
+  .tarjeta-pro:hover{border-color:var(--dorado-suave)}
+  .tarjeta-pro.seleccionada{border-color:var(--dorado);background:#fbf6ea}
+  .avatar{
+    width:56px;height:56px;border-radius:50%;margin:0 auto 10px;
+    background:linear-gradient(135deg,var(--negro),var(--negro-suave));
+    color:var(--dorado-suave);display:flex;align-items:center;justify-content:center;
+    font-family:'Playfair Display',serif;font-size:20px;
+  }
+  .tarjeta-pro h4{font-size:14.5px}
+  .tarjeta-pro .esp{font-size:11.5px;color:var(--texto-claro);margin-top:4px}
+  .tarjeta-pro.cualquiera .avatar{background:var(--beige);color:var(--texto-claro)}
+
+  .aviso-vacio{
+    background:#fbf0e8;border:1px solid #ecd3c0;color:#8a5a3b;
+    border-radius:12px;padding:14px 16px;font-size:13.5px;line-height:1.5;
+  }
+
+  .dias{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:18px}
+  .dia-btn{
+    flex:0 0 auto;width:62px;padding:10px 4px;border-radius:12px;
+    border:1.5px solid var(--beige);background:#fff;cursor:pointer;text-align:center;transition:.2s;
+  }
+  .dia-btn .nombre{font-size:11px;text-transform:uppercase;color:var(--texto-claro)}
+  .dia-btn .num{font-size:17px;font-weight:600;margin-top:2px}
+  .dia-btn.activo{background:var(--negro);border-color:var(--negro);color:#fff}
+  .dia-btn.activo .nombre{color:var(--dorado-suave)}
+  .dia-btn:disabled{opacity:.35;cursor:not-allowed}
+
+  .horas{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+  .hora-btn{
+    padding:10px 4px;border-radius:10px;border:1.5px solid var(--beige);
+    background:#fff;cursor:pointer;font-size:13.5px;font-weight:500;transition:.2s;
+  }
+  .hora-btn:hover{border-color:var(--dorado-suave)}
+  .hora-btn.activa{background:var(--negro);border-color:var(--negro);color:var(--dorado-suave)}
+  .sin-horas{color:var(--texto-claro);font-size:13.5px;padding:20px 0;text-align:center}
+
+  .campo{margin-bottom:14px}
+  .campo label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+  .campo input,.campo textarea{
+    width:100%;padding:10px 12px;border:1.5px solid var(--beige);border-radius:10px;
+    font-family:inherit;font-size:14px;background:#fffdfa;
+  }
+  .campo input:focus,.campo textarea:focus{outline:none;border-color:var(--dorado)}
+  .campo .nota-opc{color:var(--texto-claro);font-weight:400}
+  .check-linea{display:flex;align-items:flex-start;gap:8px;font-size:13px;margin:14px 0;color:var(--texto-claro)}
+  .check-linea input{margin-top:3px}
+
+  .resumen{background:var(--crema);border-radius:12px;padding:14px 16px;margin:18px 0;border:1px solid var(--beige)}
+  .resumen h4{font-size:12.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--texto-claro);margin-bottom:8px}
+  .resumen .fila{display:flex;justify-content:space-between;font-size:14px;padding:4px 0}
+  .resumen .fila.total{border-top:1px solid #d8cdb3;margin-top:6px;padding-top:10px;font-weight:600;font-size:16px}
+
+  .acciones{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:22px}
+  .btn{padding:13px 24px;border-radius:2px;border:none;font-weight:600;font-size:13.5px;cursor:pointer;transition:.25s}
+  .btn-dorado{background:linear-gradient(135deg,var(--dorado),var(--dorado-profundo));color:#fff;box-shadow:0 6px 16px rgba(138,106,46,.28)}
+  .btn-dorado:hover{filter:brightness(1.08);transform:translateY(-2px);box-shadow:0 10px 22px rgba(138,106,46,.34)}
+  .btn-dorado:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn-negro{background:var(--negro);color:var(--dorado-suave);border-radius:2px}
+  .btn-negro:hover{background:var(--negro-suave)}
+  .btn-texto{background:none;color:var(--texto-claro);text-decoration:none;font-size:13px;border-bottom:1px solid transparent;border-radius:0;padding:4px 0}
+  .btn-texto:hover{color:var(--dorado-profundo);border-bottom-color:var(--dorado-profundo)}
+
+  .barra-total{
+    position:sticky;bottom:12px;margin-top:4px;
+    background:var(--negro);color:#fff;border-radius:999px;
+    padding:12px 18px;display:flex;justify-content:space-between;align-items:center;
+    box-shadow:var(--sombra);font-size:14px;
+  }
+  .barra-total b{color:var(--dorado-suave)}
+
+  .final{text-align:center;padding:30px 10px}
+  .final .check-grande{
+    width:72px;height:72px;border-radius:50%;background:var(--ok);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 18px;
+  }
+  .localizador{
+    display:inline-block;margin:14px 0;padding:10px 22px;border-radius:10px;
+    background:var(--beige);font-family:'Playfair Display',serif;font-size:22px;
+    letter-spacing:2px;color:var(--negro);
+  }
+
+  /* ===== Móvil: la barra lateral pasa a franja superior ===== */
+  @media (max-width:900px){
+    .app-shell{flex-direction:column}
+    .sidebar{
+      width:100%;flex:0 0 auto;height:auto;position:sticky;top:0;
+      flex-direction:row;align-items:center;gap:16px;padding:12px 14px;
+      overflow-x:auto;border-right:none;border-bottom:3px solid var(--dorado);
+    }
+    .sidebar .marca{flex:0 0 auto}
+    .sidebar .marca h1{font-size:15px;white-space:nowrap}
+    .sidebar .marca .subt,.sidebar .marca .linea{display:none}
+    .nav-lateral{flex-direction:row;gap:2px;flex:1 1 auto}
+    .nav-link{padding:8px 10px;font-size:10.5px;letter-spacing:1.2px;white-space:nowrap;border-left:none;border-bottom:2px solid transparent}
+    .nav-link:hover{border-bottom-color:rgba(184,144,63,.4);border-left-color:transparent}
+    .nav-link.activo{border-bottom-color:var(--dorado);border-left-color:transparent}
+    .nav-link.destacado{margin-top:0;padding:9px 12px}
+    .sidebar .redes{display:none}
+    .seccion{padding:36px 18px;scroll-margin-top:66px}
+    .ubicacion-grid{grid-template-columns:1fr}
+  }
+  @media (max-width:480px){
+    .tarjeta-servicio{flex-wrap:wrap}
+    .tarjeta-servicio .info{flex-basis:0}
+    .tarjeta-servicio .info p{display:none}
+    .tarjeta-servicio .precio-dur{order:3;flex:1 1 100%;display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px dashed #e4dac0}
+    .tarjeta-servicio .dur{order:-1}
+    .acciones{flex-direction:column-reverse}
+    .acciones .btn{width:100%}
+    .pasos{gap:6px}
+    .paso-indicador{padding:0;width:30px;height:30px;justify-content:center}
+    .paso-indicador span:not(.num){display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="marca">
+      <h1 id="nombreNegocio">María Torres</h1>
+      <div class="subt">Peluquería · Estética</div>
+      <div class="linea"></div>
+    </div>
+    <nav class="nav-lateral" id="navLateral">
+      <a href="#inicio" class="nav-link" data-sec="inicio">Inicio</a>
+      <a href="#trabajos" class="nav-link" data-sec="trabajos">Trabajos</a>
+      <a href="#ubicacion" class="nav-link" data-sec="ubicacion">Ubicación</a>
+      <a href="#reservar" class="nav-link destacado" data-sec="reservar">Reservar cita</a>
+    </nav>
+    <div class="redes" id="redesSociales"></div>
+  </aside>
+
+  <main class="contenido">
+
+    <section id="inicio" class="seccion">
+      <div class="hero reveal">
+        <span class="eyebrow">Peluquería · Estética · Desde 2010</span>
+        <h2>Tu mejor versión, en manos expertas</h2>
+        <div class="divisor"></div>
+        <p class="lead">En María Torres Peluquería y Estética cuidamos cada detalle: corte, color, uñas, maquillaje y tratamientos de belleza, con un equipo especializado y un ambiente pensado para que te relajes desde que entras por la puerta.</p>
+        <a href="#reservar" class="btn btn-dorado cta">Reservar cita ahora</a>
+        <div class="franja-horario">
+          <div><b>Lunes a sábado</b>09:00 – 20:00</div>
+          <div><b>Domingo</b>Cerrado</div>
+          <div><b>Teléfono</b><span id="telInicio">910 000 000</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="trabajos" class="seccion">
+      <h2 class="titulo-seccion reveal">Nuestros trabajos</h2>
+      <p class="aviso-ejemplo">Fotos de ejemplo — se sustituyen por fotos reales del salón cuando Luis las tenga listas.</p>
+      <div class="trabajos-grid" id="grid-trabajos"></div>
+    </section>
+
+    <section id="ubicacion" class="seccion">
+      <h2 class="titulo-seccion reveal">Dónde estamos</h2>
+      <p class="aviso-ejemplo">Dirección y teléfono de ejemplo — pendientes de los datos reales del negocio.</p>
+      <div class="ubicacion-grid reveal">
+        <div class="datos-contacto">
+          <div class="fila-dato"><span class="icono">📍</span><div><b>Dirección</b><span id="dirUbicacion">Calle Ejemplo, 12 · 28001 Madrid</span></div></div>
+          <div class="fila-dato"><span class="icono">📞</span><div><b>Teléfono</b><span id="telUbicacion">910 000 000</span></div></div>
+          <div class="fila-dato"><span class="icono">✉️</span><div><b>Correo</b><span id="emailUbicacion">hola@mariatorres.ejemplo</span></div></div>
+          <table class="horario-tabla">
+            <tr><td>Lunes – Viernes</td><td>09:00 – 20:00</td></tr>
+            <tr><td>Sábado</td><td>09:00 – 20:00</td></tr>
+            <tr><td>Domingo</td><td>Cerrado</td></tr>
+          </table>
+          <div class="redes" id="redesSocialesUbicacion" style="margin-top:20px;padding-top:0"></div>
+        </div>
+        <div class="mapa-placeholder">
+          <span class="pin">📍</span>
+          <span>Mapa pendiente de la dirección real del salón</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="reservar" class="seccion seccion-reservar">
+      <h2 class="titulo-seccion reveal">Reserva tu cita</h2>
+      <p class="intro-reserva">Ve bajando: elige el tratamiento, el profesional, el día y la hora, y confirma al final.</p>
+      <div class="pasos" id="pasos"></div>
+      <div id="pasosReserva"></div>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+/* ===================== CONEXIÓN A SUPABASE =====================
+   La anon key es pública por diseño (RLS protege los datos reales;
+   la service_role nunca va aquí). */
+const SUPABASE_URL = "https://fpqefyyykwtdzpaubdhd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwcWVmeXl5a3d0ZHpwYXViZGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0Nzc5MzUsImV4cCI6MjEwOTA1MzkzNX0.1pzYsWG1Jyhn_PyD46AQIyfExk9ZMnrCaf3KvVkIVj4";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const CATEGORIAS = [
+  {id:"peluqueria", nombre:"Peluquería"},
+  {id:"unas", nombre:"Uñas"},
+  {id:"maquillaje", nombre:"Maquillaje"},
+  {id:"belleza", nombre:"Belleza"}
+];
+
+// Se rellenan al cargar la página desde Supabase (services, professionals,
+// professional_services, business_hours). Ver cargarDatosIniciales().
+let SERVICIOS = [];
+let PROFESIONALES = [];
+let HORARIO_NEGOCIO = {};
+let errorCarga = null;
+
+async function cargarDatosIniciales(){
+  try{
+    const [rServicios, rProfs, rRelacion, rHorario, rConfig] = await Promise.all([
+      sb.from("services").select("id,categoria,nombre,descripcion,precio,duracion_minutos,icono").eq("activo", true).order("orden"),
+      sb.from("professionals").select("id,nombre").eq("activo", true).order("orden"),
+      sb.from("professional_services").select("professional_id,service_id"),
+      sb.from("business_hours").select("dia_semana,hora_inicio,hora_fin"),
+      sb.from("business_settings").select("*").single()
+    ]);
+    const primerError = [rServicios, rProfs, rRelacion, rHorario].find(r => r.error);
+    if(primerError) throw primerError.error;
+
+    SERVICIOS = (rServicios.data || []).map(s => ({
+      id: s.id, categoria: s.categoria, nombre: s.nombre,
+      descripcion: s.descripcion || "", precio: Number(s.precio),
+      duracion: s.duracion_minutos, icono: s.icono || "💇"
+    }));
+
+    PROFESIONALES = (rProfs.data || []).map(p => {
+      const serviciosIds = (rRelacion.data || [])
+        .filter(x => x.professional_id === p.id)
+        .map(x => x.service_id);
+      const especialidades = Array.from(new Set(
+        serviciosIds.map(sid => SERVICIOS.find(s => s.id === sid)?.categoria).filter(Boolean)
+      ));
+      return { id: p.id, nombre: p.nombre, serviciosIds, especialidades };
+    });
+
+    HORARIO_NEGOCIO = {};
+    (rHorario.data || []).forEach(h => {
+      HORARIO_NEGOCIO[h.dia_semana] = { inicio: h.hora_inicio.slice(0,5), fin: h.hora_fin.slice(0,5) };
+    });
+
+    if(rConfig.data) aplicarDatosNegocio(rConfig.data);
+  }catch(err){
+    console.error(err);
+    errorCarga = "No se pudo conectar con la base de datos. Comprueba tu conexión e inténtalo de nuevo.";
+  }
+}
+
+function aplicarDatosNegocio(config){
+  if(config.nombre_negocio) document.title = config.nombre_negocio;
+  const asignar = (id, valor) => { const el = document.getElementById(id); if(el && valor) el.textContent = valor; };
+  asignar("telInicio", config.telefono);
+  asignar("telUbicacion", config.telefono);
+  asignar("emailUbicacion", config.email_contacto);
+  asignar("dirUbicacion", config.direccion);
+  renderRedesSociales(config);
+}
+
+// Botones de contacto rápido (WhatsApp se calcula a partir del
+// teléfono; Instagram y TikTok solo salen si Luis los ha rellenado
+// en el panel de administración).
+function renderRedesSociales(config){
+  const botones = [];
+  if(config.telefono){
+    const digitos = config.telefono.replace(/\D/g,"");
+    const conPrefijo = digitos.length===9 ? "34"+digitos : digitos;
+    if(conPrefijo) botones.push({href:`https://wa.me/${conPrefijo}`, texto:"WA", titulo:"Escribir por WhatsApp"});
+  }
+  if(config.instagram_url) botones.push({href:config.instagram_url, texto:"IG", titulo:"Instagram"});
+  if(config.tiktok_url) botones.push({href:config.tiktok_url, texto:"TT", titulo:"TikTok"});
+  const html = botones.map(b=>`<a href="${b.href}" target="_blank" rel="noopener" title="${b.titulo}">${b.texto}</a>`).join("");
+  ["redesSociales","redesSocialesUbicacion"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = html;
+  });
+}
+
+const TRABAJOS_EJEMPLO = [
+  {emoji:"💇‍♀️", cap:"Balayage dorado", color:"linear-gradient(135deg,#c9a24b,#8a6a2a)"},
+  {emoji:"✂️", cap:"Corte bob clásico", color:"linear-gradient(135deg,#3a362c,#1a1812)"},
+  {emoji:"👰", cap:"Recogido de novia", color:"linear-gradient(135deg,#e4cd94,#b8903d)"},
+  {emoji:"💅", cap:"Manicura francesa", color:"linear-gradient(135deg,#d7a9a0,#a15a5a)"},
+  {emoji:"💄", cap:"Maquillaje de noche", color:"linear-gradient(135deg,#4a3b52,#2a2235)"},
+  {emoji:"🧖‍♀️", cap:"Tratamiento facial glow", color:"linear-gradient(135deg,#9bb089,#4a7c59)"}
+];
+
+function fechaEnDias(n){
+  const d = new Date(); d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+
+/* ===================== ESTADO DEL ASISTENTE ===================== */
+
+const estado = {
+  paso: 1, // paso que está activo/abierto para editar (1-4); 5 = cita confirmada
+  categoriaActiva: CATEGORIAS[0].id,
+  serviciosElegidos: [],
+  profesionalId: null,
+  fecha: null,
+  hora: null,
+  horasDisponiblesActuales: null, // null = aún no se ha comprobado / se está comprobando
+  horasError: null,
+  cliente: {nombre:"", telefono:"", email:"", notas:"", acepta:false, aceptaMarketing:false},
+  localizador: null
+};
+let _horasCacheKey = null;
+
+const PASOS = ["Tratamiento","Profesional","Fecha y hora","Confirmar"];
+
+/* ===================== UTILIDADES ===================== */
+
+function serviciosSeleccionadosObjs(){ return estado.serviciosElegidos.map(id => SERVICIOS.find(s=>s.id===id)); }
+function duracionTotal(){ return serviciosSeleccionadosObjs().reduce((a,s)=>a+s.duracion,0); }
+function precioTotal(){ return serviciosSeleccionadosObjs().reduce((a,s)=>a+s.precio,0); }
+
+function profesionalesParaServicios(){
+  if(estado.serviciosElegidos.length===0) return PROFESIONALES;
+  return PROFESIONALES.filter(p => estado.serviciosElegidos.every(id => p.serviciosIds.includes(id)));
+}
+
+function minutosDesdeMedianoche(hhmm){ const [h,m] = hhmm.split(":").map(Number); return h*60+m; }
+function hhmmDesdeMinutos(min){ const h = Math.floor(min/60), m = min%60; return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0"); }
+
+function claveHoras(){ return estado.fecha + "|" + estado.profesionalId + "|" + duracionTotal(); }
+
+// Comprueba disponibilidad real: lee en Supabase las citas ya existentes
+// de los profesionales candidatos ese día, y calcula los huecos libres
+// igual que antes, pero con datos de verdad en vez de inventados.
+async function cargarHorasDisponibles(){
+  const duracion = duracionTotal();
+  const candidatos = estado.profesionalId ? [estado.profesionalId] : profesionalesParaServicios().map(p=>p.id);
+  if(duracion===0 || candidatos.length===0){
+    estado.horasDisponiblesActuales = [];
+    renderReserva();
+    return;
+  }
+  try{
+    // Se lee de la vista `disponibilidad_citas` (sin datos del cliente),
+    // no de la tabla `appointments`, que está cerrada a la clave pública.
+    const { data, error } = await sb
+      .from("disponibilidad_citas")
+      .select("professional_id,hora_inicio,hora_fin")
+      .eq("fecha", estado.fecha)
+      .in("professional_id", candidatos);
+    if(error) throw error;
+
+    const ocupadosPorPro = {};
+    (data || []).forEach(c=>{
+      (ocupadosPorPro[c.professional_id] ||= []).push([
+        minutosDesdeMedianoche(c.hora_inicio.slice(0,5)),
+        minutosDesdeMedianoche(c.hora_fin.slice(0,5))
+      ]);
+    });
+
+    const horario = HORARIO_NEGOCIO[new Date(estado.fecha+"T00:00:00").getDay()];
+    const libres = new Set();
+    if(horario){
+      const inicioMin = minutosDesdeMedianoche(horario.inicio);
+      const finMin = minutosDesdeMedianoche(horario.fin);
+      const esHoy = estado.fecha === new Date().toISOString().slice(0,10);
+      const ahoraMin = esHoy ? (new Date().getHours()*60 + new Date().getMinutes()) : -1;
+      candidatos.forEach(pid=>{
+        const ocupados = ocupadosPorPro[pid] || [];
+        for(let t=inicioMin; t+duracion<=finMin; t+=15){
+          if(esHoy && t<=ahoraMin) continue;
+          const solapa = ocupados.some(([oi,of]) => t<of && (t+duracion)>oi);
+          if(!solapa) libres.add(hhmmDesdeMinutos(t));
+        }
+      });
+    }
+    estado.horasError = null;
+    estado.horasDisponiblesActuales = Array.from(libres).sort();
+  }catch(err){
+    console.error(err);
+    estado.horasError = "No se pudo comprobar la disponibilidad. Inténtalo de nuevo.";
+    estado.horasDisponiblesActuales = [];
+  }
+  renderReserva();
+}
+
+// Se llama en cada render del paso 3: si cambió la fecha, el profesional
+// o la duración desde la última vez, vuelve a preguntar a Supabase.
+function asegurarHoras(){
+  const clave = claveHoras();
+  if(clave !== _horasCacheKey){
+    _horasCacheKey = clave;
+    estado.horasDisponiblesActuales = null;
+    cargarHorasDisponibles();
+  }
+}
+
+function formatoFechaLarga(fechaISO){
+  const d = new Date(fechaISO+"T00:00:00");
+  return d.toLocaleDateString("es-ES",{weekday:"long", day:"numeric", month:"long"});
+}
+
+/* ===================== SECCIONES FIJAS (trabajos) ===================== */
+
+function pintarTrabajos(){
+  document.getElementById("grid-trabajos").innerHTML = TRABAJOS_EJEMPLO.map((t,i)=>`
+    <div class="trabajo-card reveal" style="background:${t.color};transition-delay:${i*70}ms">
+      <span class="emoji">${t.emoji}</span>
+      <span class="cap">${t.cap}</span>
+    </div>`).join("");
+}
+
+function activarAparicionSuave(){
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){ entry.target.classList.add("visible"); obs.unobserve(entry.target); }
+    });
+  }, {threshold:.15, rootMargin:"0px 0px -60px 0px"});
+  document.querySelectorAll(".reveal").forEach(el=>obs.observe(el));
+}
+
+/* ===================== NAV LATERAL: resaltar sección visible ===================== */
+
+function activarNavSegunScroll(){
+  const secciones = ["inicio","trabajos","ubicacion","reservar"].map(id=>document.getElementById(id));
+  const enlaces = Array.from(document.querySelectorAll(".nav-link"));
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        const id = entry.target.id;
+        enlaces.forEach(a=>a.classList.toggle("activo", a.dataset.sec===id && !a.classList.contains("destacado")));
+      }
+    });
+  }, {rootMargin:"-40% 0px -55% 0px"});
+  secciones.forEach(s=>s && obs.observe(s));
+}
+
+/* ===================== RESERVAS: render apilado ===================== */
+
+function pintarPasos(){
+  const cont = document.getElementById("pasos");
+  cont.innerHTML = PASOS.map((nombre,i)=>{
+    const n = i+1;
+    const cls = n===estado.paso ? "activo" : (n<estado.paso ? "hecho" : "");
+    return `<div class="paso-indicador ${cls}"><span class="num">${n<estado.paso?"✓":n}</span><span>${nombre}</span></div>`;
+  }).join("");
+}
+
+function renderReserva(){
+  pintarPasos();
+  if(estado.paso===3) asegurarHoras();
+  const cont = document.getElementById("pasosReserva");
+  let html = "";
+
+  if(errorCarga){
+    html = `<div class="panel"><p class="ayuda" style="color:var(--error)">${errorCarga}</p></div>`;
+    cont.innerHTML = html;
+    return;
+  }
+
+  if(estado.paso===5){
+    html = vistaFinal();
+  } else {
+    if(estado.paso>1) html += resumenPaso(1);
+    if(estado.paso>2) html += resumenPaso(2);
+    if(estado.paso>3) html += resumenPaso(3);
+
+    if(estado.paso===1) html += `<div id="paso-activo">${vistaPaso1()}</div>`;
+    else if(estado.paso===2) html += `<div id="paso-activo">${vistaPaso2()}</div>`;
+    else if(estado.paso===3) html += `<div id="paso-activo">${vistaPaso3()}</div>`;
+    else if(estado.paso===4) html += `<div id="paso-activo">${vistaPaso4()}</div>`;
+  }
+
+  cont.innerHTML = html;
+  enlazarEventos();
+  const activo = document.getElementById("paso-activo");
+  if(activo) activo.scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function resumenPaso(n){
+  if(n===1){
+    const nombres = serviciosSeleccionadosObjs().map(s=>s.nombre).join(", ");
+    return `<div class="paso-resumen">
+      <span class="num-check">✓</span>
+      <div class="texto"><b>Tratamiento</b><span>${nombres} · ${duracionTotal()} min · ${precioTotal()} €</span></div>
+      <button data-editar="1">Editar</button>
+    </div>`;
+  }
+  if(n===2){
+    const pro = estado.profesionalId ? PROFESIONALES.find(p=>p.id===estado.profesionalId).nombre : "Primero disponible";
+    return `<div class="paso-resumen">
+      <span class="num-check">✓</span>
+      <div class="texto"><b>Profesional</b><span>${pro}</span></div>
+      <button data-editar="2">Editar</button>
+    </div>`;
+  }
+  if(n===3){
+    return `<div class="paso-resumen">
+      <span class="num-check">✓</span>
+      <div class="texto"><b>Fecha y hora</b><span>${formatoFechaLarga(estado.fecha)} · ${estado.hora}</span></div>
+      <button data-editar="3">Editar</button>
+    </div>`;
+  }
+  return "";
+}
+
+function vistaPaso1(){
+  const servicios = SERVICIOS.filter(s=>s.categoria===estado.categoriaActiva);
+  const hayElegidos = estado.serviciosElegidos.length>0;
+  return `
+  <div class="panel">
+    <h3>1. Elige tu tratamiento</h3>
+    <p class="ayuda">Puedes seleccionar uno o varios servicios.</p>
+    <div class="categorias">
+      ${CATEGORIAS.map(c=>`<button class="cat-btn ${c.id===estado.categoriaActiva?'activa':''}" data-cat="${c.id}">${c.nombre}</button>`).join("")}
+    </div>
+    <div class="lista-servicios">
+      ${servicios.map(s=>{
+        const sel = estado.serviciosElegidos.includes(s.id);
+        return `
+        <div class="tarjeta-servicio ${sel?'seleccionada':''}" data-servicio="${s.id}">
+          <div class="icono">${s.icono}</div>
+          <div class="info"><h4>${s.nombre}</h4><p>${s.descripcion}</p></div>
+          <div class="precio-dur"><div class="precio">${s.precio} €</div><div class="dur">${s.duracion} min</div></div>
+          <div class="marca-check">${sel?'✓':''}</div>
+        </div>`;
+      }).join("")}
+    </div>
+    ${hayElegidos ? `
+    <div class="barra-total">
+      <span>${estado.serviciosElegidos.length} ${estado.serviciosElegidos.length===1?"servicio":"servicios"} · <b>${duracionTotal()} min</b></span>
+      <b>${precioTotal()} €</b>
+    </div>` : ""}
+    <div class="acciones">
+      <span></span>
+      <button class="btn btn-dorado" id="btnSiguiente1" ${hayElegidos?"":"disabled"}>Continuar →</button>
+    </div>
+  </div>`;
+}
+
+function vistaPaso2(){
+  const disponibles = profesionalesParaServicios();
+  const sinNadie = disponibles.length === 0;
+  return `
+  <div class="panel">
+    <h3>2. Elige profesional</h3>
+    <p class="ayuda">O deja que te asignemos el primero disponible.</p>
+    ${sinNadie ? `
+    <div class="aviso-vacio">Nadie hace a la vez todos los servicios que elegiste. Prueba a reservarlos en citas separadas, o quita alguno en el paso 1.</div>` : `
+    <div class="lista-profesionales">
+      <div class="tarjeta-pro cualquiera ${estado.profesionalId===null?'seleccionada':''}" data-pro="">
+        <div class="avatar">★</div>
+        <h4>Primero disponible</h4>
+        <div class="esp">Cualquiera del equipo</div>
+      </div>
+      ${disponibles.map(p=>`
+        <div class="tarjeta-pro ${estado.profesionalId===p.id?'seleccionada':''}" data-pro="${p.id}">
+          <div class="avatar">${p.nombre.split(" ").map(x=>x[0]).join("").slice(0,2)}</div>
+          <h4>${p.nombre}</h4>
+          <div class="esp">${p.especialidades.map(e=>CATEGORIAS.find(c=>c.id===e).nombre).join(" · ")}</div>
+        </div>`).join("")}
+    </div>`}
+    <div class="acciones">
+      <button class="btn btn-texto" id="btnAtras2">← Atrás</button>
+      <button class="btn btn-dorado" id="btnSiguiente2" ${sinNadie?"disabled":""}>Continuar →</button>
+    </div>
+  </div>`;
+}
+
+function vistaPaso3(){
+  if(!estado.fecha) estado.fecha = fechaEnDias(0);
+  const dias = Array.from({length:14}, (_,i)=>fechaEnDias(i));
+  const cargandoHoras = estado.horasDisponiblesActuales === null;
+  const horas = estado.horasDisponiblesActuales || [];
+  return `
+  <div class="panel">
+    <h3>3. Elige fecha y hora</h3>
+    <p class="ayuda">Duración total: ${duracionTotal()} min. Solo se muestran huecos realmente libres.</p>
+    <div class="dias">
+      ${dias.map(f=>{
+        const d = new Date(f+"T00:00:00");
+        const cerrado = !HORARIO_NEGOCIO[d.getDay()];
+        return `<button class="dia-btn ${f===estado.fecha?'activo':''}" data-dia="${f}" ${cerrado?"disabled":""}>
+          <div class="nombre">${d.toLocaleDateString("es-ES",{weekday:"short"}).replace(".","")}</div>
+          <div class="num">${d.getDate()}</div>
+        </button>`;
+      }).join("")}
+    </div>
+    <div class="horas">
+      ${cargandoHoras ? `<div class="sin-horas">Comprobando huecos libres…</div>`
+        : estado.horasError ? `<div class="sin-horas">${estado.horasError}</div>`
+        : horas.length ? horas.map(h=>`<button class="hora-btn ${h===estado.hora?'activa':''}" data-hora="${h}">${h}</button>`).join("")
+        : `<div class="sin-horas">No quedan huecos este día para la duración elegida. Prueba otro día.</div>`}
+    </div>
+    <div class="acciones">
+      <button class="btn btn-texto" id="btnAtras3">← Atrás</button>
+      <button class="btn btn-dorado" id="btnSiguiente3" ${estado.hora?"":"disabled"}>Continuar →</button>
+    </div>
+  </div>`;
+}
+
+function vistaPaso4(){
+  const c = estado.cliente;
+  const pro = estado.profesionalId ? PROFESIONALES.find(p=>p.id===estado.profesionalId).nombre : "Primero disponible";
+  const listo = c.nombre.trim() && c.telefono.trim() && c.acepta;
+  return `
+  <div class="panel">
+    <h3>4. Tus datos y confirmación</h3>
+    <div class="campo"><label>Nombre y apellidos</label><input id="cNombre" value="${c.nombre}" placeholder="Ej. Ana López"></div>
+    <div class="campo"><label>Teléfono</label><input id="cTelefono" value="${c.telefono}" placeholder="Ej. 600 123 456"></div>
+    <div class="campo"><label>Correo electrónico <span class="nota-opc">(opcional)</span></label><input id="cEmail" value="${c.email}" placeholder="ana@ejemplo.com"></div>
+    <div class="campo"><label>Observaciones <span class="nota-opc">(opcional)</span></label><textarea id="cNotas" rows="2" placeholder="Alguna preferencia o alergia...">${c.notas}</textarea></div>
+    <label class="check-linea"><input type="checkbox" id="cAcepta" ${c.acepta?"checked":""}> He leído y acepto la política de privacidad (texto de ejemplo: tus datos solo se usan para gestionar esta cita).</label>
+    <label class="check-linea"><input type="checkbox" id="cAceptaMarketing" ${c.aceptaMarketing?"checked":""}> Quiero recibir ofertas y novedades por correo <span class="nota-opc">(opcional)</span>.</label>
+
+    <div class="resumen">
+      <h4>Resumen de tu cita</h4>
+      ${serviciosSeleccionadosObjs().map(s=>`<div class="fila"><span>${s.nombre}</span><span>${s.precio} €</span></div>`).join("")}
+      <div class="fila"><span>Profesional</span><span>${pro}</span></div>
+      <div class="fila"><span>Fecha</span><span>${formatoFechaLarga(estado.fecha)}</span></div>
+      <div class="fila"><span>Hora</span><span>${estado.hora}</span></div>
+      <div class="fila"><span>Duración</span><span>${duracionTotal()} min</span></div>
+      <div class="fila total"><span>Total</span><span>${precioTotal()} €</span></div>
+    </div>
+
+    <div class="acciones">
+      <button class="btn btn-texto" id="btnAtras4">← Atrás</button>
+      <button class="btn btn-dorado" id="btnConfirmar" ${listo?"":"disabled"}>Confirmar cita</button>
+    </div>
+  </div>`;
+}
+
+function vistaFinal(){
+  const pro = estado.profesionalId ? PROFESIONALES.find(p=>p.id===estado.profesionalId).nombre : "Primero disponible";
+  return `
+  <div class="panel final">
+    <div class="check-grande">✓</div>
+    <h3>¡Cita confirmada!</h3>
+    <p class="ayuda">Te esperamos. Guarda este localizador por si necesitas consultarla o modificarla.</p>
+    <div class="localizador">${estado.localizador}</div>
+    <div class="resumen" style="text-align:left">
+      <h4>Resumen</h4>
+      ${serviciosSeleccionadosObjs().map(s=>`<div class="fila"><span>${s.nombre}</span><span>${s.precio} €</span></div>`).join("")}
+      <div class="fila"><span>Profesional</span><span>${pro}</span></div>
+      <div class="fila"><span>Fecha</span><span>${formatoFechaLarga(estado.fecha)}</span></div>
+      <div class="fila"><span>Hora</span><span>${estado.hora}</span></div>
+      <div class="fila total"><span>Total</span><span>${precioTotal()} €</span></div>
+    </div>
+    <button class="btn btn-negro" id="btnNuevaReserva">Hacer otra reserva</button>
+  </div>`;
+}
+
+/* ===================== EVENTOS ===================== */
+
+function enlazarEventos(){
+  document.querySelectorAll(".cat-btn").forEach(b=>b.onclick=()=>{estado.categoriaActiva=b.dataset.cat; renderReserva();});
+  document.querySelectorAll(".tarjeta-servicio").forEach(t=>t.onclick=()=>{
+    const id = t.dataset.servicio;
+    const i = estado.serviciosElegidos.indexOf(id);
+    if(i>=0) estado.serviciosElegidos.splice(i,1); else estado.serviciosElegidos.push(id);
+    estado.profesionalId=null; estado.hora=null;
+    renderReserva();
+  });
+  const btn1 = document.getElementById("btnSiguiente1");
+  if(btn1) btn1.onclick=()=>{estado.paso=2; renderReserva();};
+
+  document.querySelectorAll(".tarjeta-pro").forEach(t=>t.onclick=()=>{
+    estado.profesionalId = t.dataset.pro || null;
+    estado.hora=null;
+    renderReserva();
+  });
+  const btnA2 = document.getElementById("btnAtras2"); if(btnA2) btnA2.onclick=()=>{estado.paso=1; renderReserva();};
+  const btnS2 = document.getElementById("btnSiguiente2"); if(btnS2) btnS2.onclick=()=>{estado.paso=3; renderReserva();};
+
+  document.querySelectorAll(".dia-btn").forEach(b=>b.onclick=()=>{estado.fecha=b.dataset.dia; estado.hora=null; renderReserva();});
+  document.querySelectorAll(".hora-btn").forEach(b=>b.onclick=()=>{estado.hora=b.dataset.hora; renderReserva();});
+  const btnA3 = document.getElementById("btnAtras3"); if(btnA3) btnA3.onclick=()=>{estado.paso=2; renderReserva();};
+  const btnS3 = document.getElementById("btnSiguiente3"); if(btnS3) btnS3.onclick=()=>{estado.paso=4; renderReserva();};
+
+  ["cNombre","cTelefono","cEmail","cNotas"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.oninput=()=>{ estado.cliente[id.slice(1).toLowerCase()] = el.value; actualizarBotonConfirmar(); };
+  });
+  const chk = document.getElementById("cAcepta");
+  if(chk) chk.onchange=()=>{estado.cliente.acepta=chk.checked; actualizarBotonConfirmar();};
+  const chkM = document.getElementById("cAceptaMarketing");
+  if(chkM) chkM.onchange=()=>{estado.cliente.aceptaMarketing=chkM.checked;};
+  const btnA4 = document.getElementById("btnAtras4"); if(btnA4) btnA4.onclick=()=>{estado.paso=3; renderReserva();};
+  const btnConf = document.getElementById("btnConfirmar");
+  if(btnConf) btnConf.onclick=async ()=>{
+    btnConf.disabled = true;
+    btnConf.textContent = "Confirmando…";
+    try{
+      const { data, error } = await sb.rpc("crear_cita", {
+        p_nombre: estado.cliente.nombre.trim(),
+        p_telefono: estado.cliente.telefono.trim(),
+        p_email: estado.cliente.email.trim() || null,
+        p_acepta_marketing: !!estado.cliente.aceptaMarketing,
+        p_notas: estado.cliente.notas.trim() || null,
+        p_profesional_id: estado.profesionalId,
+        p_servicios_ids: estado.serviciosElegidos,
+        p_fecha: estado.fecha,
+        p_hora_inicio: estado.hora
+      });
+      if(error) throw error;
+      const fila = Array.isArray(data) ? data[0] : data;
+      estado.localizador = fila.localizador;
+      estado.profesionalId = fila.profesional_id; // quién se asignó de verdad (si era "primero disponible")
+      estado.paso = 5;
+      renderReserva();
+    }catch(err){
+      console.error(err);
+      const sinHueco = (err.message || "").includes("no está disponible");
+      alert(sinHueco
+        ? "Vaya, ese hueco se acaba de ocupar. Elige otra hora."
+        : "No se pudo confirmar la cita. Inténtalo de nuevo.");
+      btnConf.disabled = false;
+      btnConf.textContent = "Confirmar cita";
+      _horasCacheKey = null; // por si el hueco ya no vale, refrescar disponibilidad
+      renderReserva();
+    }
+  };
+
+  const btnNueva = document.getElementById("btnNuevaReserva");
+  if(btnNueva) btnNueva.onclick=()=>{
+    estado.paso=1; estado.serviciosElegidos=[]; estado.profesionalId=null;
+    estado.fecha=null; estado.hora=null; estado.horasDisponiblesActuales=null;
+    estado.cliente={nombre:"",telefono:"",email:"",notas:"",acepta:false,aceptaMarketing:false};
+    _horasCacheKey = null;
+    renderReserva();
+  };
+
+  document.querySelectorAll("[data-editar]").forEach(b=>b.onclick=()=>{
+    const n = Number(b.dataset.editar);
+    if(n===1){ estado.profesionalId=null; estado.hora=null; }
+    if(n===2){ estado.hora=null; }
+    estado.paso = n;
+    renderReserva();
+  });
+}
+
+function actualizarBotonConfirmar(){
+  const c = estado.cliente;
+  const btn = document.getElementById("btnConfirmar");
+  if(btn) btn.disabled = !(c.nombre.trim() && c.telefono.trim() && c.acepta);
+}
+
+async function iniciar(){
+  document.getElementById("pasosReserva").innerHTML = '<div class="panel"><p class="ayuda">Cargando tratamientos y disponibilidad…</p></div>';
+  await cargarDatosIniciales();
+  pintarTrabajos();
+  renderReserva();
+  activarNavSegunScroll();
+  activarAparicionSuave();
+}
+iniciar();
+</script>
+</body>
+</html>
