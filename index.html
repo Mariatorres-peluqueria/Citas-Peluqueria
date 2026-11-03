@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>María Torres Peluquería y Estética</title>
+<meta name="description" content="Peluquería, uñas, maquillaje y estética. Reserva tu cita online en María Torres — fácil, al momento, desde el móvil.">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#17140f">
+<meta property="og:title" content="María Torres Peluquería y Estética">
+<meta property="og:description" content="Reserva tu cita online: peluquería, uñas, maquillaje y estética.">
+<meta property="og:image" content="imagenes/hero-maria-torres.png">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -37,6 +46,20 @@
   a{color:inherit}
   button{font-family:inherit}
   img{max-width:100%;display:block}
+
+  ::selection{background:var(--dorado);color:#fff}
+  a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+    outline:2px solid var(--dorado);outline-offset:2px;
+  }
+
+  .cargando-elegante{display:flex;flex-direction:column;align-items:center;gap:14px;padding:50px 20px;color:var(--texto-claro)}
+  .cargando-elegante .anillo{
+    width:30px;height:30px;border-radius:50%;
+    border:2px solid var(--beige);border-top-color:var(--dorado);
+    animation:girar .8s linear infinite;
+  }
+  .cargando-elegante span{font-size:13px;letter-spacing:.3px}
+  @keyframes girar{to{transform:rotate(360deg)}}
 
   .titulo-seccion{position:relative;padding-bottom:16px;margin-bottom:8px}
   .titulo-seccion::after{
@@ -152,7 +175,7 @@
   /* ===== Ubicación ===== */
   .ubicacion-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:30px;align-items:start}
   .datos-contacto .fila-dato{display:flex;gap:12px;margin-bottom:16px;font-size:14px}
-  .datos-contacto .fila-dato .icono{font-size:18px;flex:0 0 auto}
+  .datos-contacto .fila-dato .icono{flex:0 0 auto;width:19px;height:19px;color:var(--dorado-profundo);margin-top:2px}
   .datos-contacto .fila-dato b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--texto-claro);margin-bottom:2px}
   .horario-tabla{width:100%;border-collapse:collapse;margin-top:18px;font-size:13.5px}
   .horario-tabla td{padding:6px 0;border-bottom:1px dashed var(--beige)}
@@ -160,9 +183,9 @@
   .mapa-placeholder{
     background:var(--beige);border:1.5px dashed #d2c6a8;border-radius:var(--radio);
     min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    color:var(--texto-claro);gap:8px;text-align:center;padding:20px;font-size:13px;
+    color:var(--texto-claro);gap:10px;text-align:center;padding:20px;font-size:13px;
   }
-  .mapa-placeholder .pin{font-size:30px}
+  .mapa-placeholder .pin{width:30px;height:30px;color:var(--dorado-profundo)}
 
   /* ===== Reservar: pasos apilados ===== */
   .seccion-reservar h2{margin-bottom:6px}
@@ -417,7 +440,7 @@
     <section id="sobre-nosotros" class="seccion">
       <div class="hero-grid">
         <div class="hero reveal">
-          <span class="eyebrow">Peluquería · Estética · Desde 2010</span>
+          <span class="eyebrow" id="eyebrowDesde">Peluquería · Estética</span>
           <h2>Tu mejor versión, en manos expertas</h2>
           <div class="divisor"></div>
           <p class="lead">En María Torres Peluquería y Estética cuidamos cada detalle: corte, color, uñas, maquillaje y tratamientos de belleza, con un equipo especializado y un ambiente pensado para que te relajes desde que entras por la puerta.</p>
@@ -444,9 +467,9 @@
       <p class="aviso-ejemplo">Dirección y teléfono de ejemplo — pendientes de los datos reales del negocio.</p>
       <div class="ubicacion-grid reveal">
         <div class="datos-contacto">
-          <div class="fila-dato"><span class="icono">📍</span><div><b>Dirección</b><span id="dirUbicacion">Calle Ejemplo, 12 · 28001 Madrid</span></div></div>
-          <div class="fila-dato"><span class="icono">📞</span><div><b>Teléfono</b><span id="telUbicacion">910 000 000</span></div></div>
-          <div class="fila-dato"><span class="icono">✉️</span><div><b>Correo</b><span id="emailUbicacion">hola@mariatorres.ejemplo</span></div></div>
+          <div class="fila-dato"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg><div><b>Dirección</b><span id="dirUbicacion">Calle Ejemplo, 12 · 28001 Madrid</span></div></div>
+          <div class="fila-dato"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg><div><b>Teléfono</b><span id="telUbicacion">910 000 000</span></div></div>
+          <div class="fila-dato"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3,7 12,13 21,7"/></svg><div><b>Correo</b><span id="emailUbicacion">hola@mariatorres.ejemplo</span></div></div>
           <table class="horario-tabla">
             <tr><td>Lunes – Viernes</td><td>09:00 – 20:00</td></tr>
             <tr><td>Sábado</td><td>09:00 – 20:00</td></tr>
@@ -455,7 +478,10 @@
           <div class="redes" id="redesSocialesUbicacion" style="margin-top:20px;padding-top:0"></div>
         </div>
         <div class="mapa-placeholder">
-          <span class="pin">📍</span>
+          <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">
+            <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/>
+            <circle cx="12" cy="9.5" r="2.4"/>
+          </svg>
           <span>Mapa pendiente de la dirección real del salón</span>
         </div>
       </div>
@@ -479,6 +505,9 @@
 const SUPABASE_URL = "https://fpqefyyykwtdzpaubdhd.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwcWVmeXl5a3d0ZHpwYXViZGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0Nzc5MzUsImV4cCI6MjEwOTA1MzkzNX0.1pzYsWG1Jyhn_PyD46AQIyfExk9ZMnrCaf3KvVkIVj4";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Texto por defecto hasta que llegue el real de business_settings.
+let NEGOCIO_PRIVACIDAD = "tus datos solo se usan para gestionar esta cita.";
 
 const CATEGORIAS = [
   {id:"peluqueria", nombre:"Peluquería"},
@@ -541,8 +570,18 @@ function aplicarDatosNegocio(config){
   asignar("telUbicacion", config.telefono);
   asignar("emailUbicacion", config.email_contacto);
   asignar("dirUbicacion", config.direccion);
+  if(config.anio_fundacion) asignar("eyebrowDesde", `Peluquería · Estética · Desde ${config.anio_fundacion}`);
+  if(config.texto_politica_privacidad) NEGOCIO_PRIVACIDAD = config.texto_politica_privacidad;
   renderRedesSociales(config);
 }
+
+// Iconos reales de cada red (en línea, a juego con el resto del
+// diseño — se pintan en el color dorado del círculo que los envuelve).
+const ICONOS_REDES = {
+  whatsapp: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm5.8 14.2c-.2.7-1.4 1.3-2 1.4-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.7-.6-3-1.3-5-4.3-5.1-4.5-.1-.2-1.2-1.6-1.2-3.1s.8-2.2 1.1-2.5c.3-.3.6-.4.8-.4h.6c.2 0 .4 0 .6.5.2.5.8 1.9.8 2 .1.2.1.3 0 .5-.1.2-.1.3-.3.5-.1.2-.3.3-.4.5-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.5 1.5.3.1.5.1.6-.1.2-.2.7-.8.9-1.1.2-.3.4-.2.6-.1.2.1 1.6.8 1.9.9.3.1.5.2.6.3.1.2.1.9-.1 1.6z"/></svg>`,
+  instagram: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"/></svg>`,
+  tiktok: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"/></svg>`
+};
 
 // Botones de contacto rápido (WhatsApp se calcula a partir del
 // teléfono; Instagram y TikTok solo salen si Luis los ha rellenado
@@ -550,15 +589,15 @@ function aplicarDatosNegocio(config){
 function renderRedesSociales(config){
   const botones = [];
   if(config.whatsapp_url){
-    botones.push({href:config.whatsapp_url, texto:"WA", titulo:"Escribir por WhatsApp"});
+    botones.push({href:config.whatsapp_url, icono:"whatsapp", titulo:"Escribir por WhatsApp"});
   } else if(config.telefono){
     const digitos = config.telefono.replace(/\D/g,"");
     const conPrefijo = digitos.length===9 ? "34"+digitos : digitos;
-    if(conPrefijo) botones.push({href:`https://wa.me/${conPrefijo}`, texto:"WA", titulo:"Escribir por WhatsApp"});
+    if(conPrefijo) botones.push({href:`https://wa.me/${conPrefijo}`, icono:"whatsapp", titulo:"Escribir por WhatsApp"});
   }
-  if(config.instagram_url) botones.push({href:config.instagram_url, texto:"IG", titulo:"Instagram"});
-  if(config.tiktok_url) botones.push({href:config.tiktok_url, texto:"TT", titulo:"TikTok"});
-  const html = botones.map(b=>`<a href="${b.href}" target="_blank" rel="noopener" title="${b.titulo}">${b.texto}</a>`).join("");
+  if(config.instagram_url) botones.push({href:config.instagram_url, icono:"instagram", titulo:"Instagram"});
+  if(config.tiktok_url) botones.push({href:config.tiktok_url, icono:"tiktok", titulo:"TikTok"});
+  const html = botones.map(b=>`<a href="${b.href}" target="_blank" rel="noopener" title="${b.titulo}">${ICONOS_REDES[b.icono]}</a>`).join("");
   ["redesSociales","redesSocialesUbicacion"].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.innerHTML = html;
@@ -910,7 +949,7 @@ function vistaPaso3(){
       }).join("")}
     </div>
     <div class="horas">
-      ${cargandoHoras ? `<div class="sin-horas">Comprobando huecos libres…</div>`
+      ${cargandoHoras ? `<div class="cargando-elegante" style="padding:24px 0"><div class="anillo"></div><span>Comprobando huecos libres…</span></div>`
         : estado.horasError ? `<div class="sin-horas">${estado.horasError}</div>`
         : horas.length ? horas.map(h=>`<button class="hora-btn ${h===estado.hora?'activa':''}" data-hora="${h}">${h}</button>`).join("")
         : `<div class="sin-horas">No quedan huecos este día para la duración elegida. Prueba otro día.</div>`}
@@ -933,7 +972,7 @@ function vistaPaso4(){
     <div class="campo"><label>Teléfono</label><input id="cTelefono" value="${c.telefono}" placeholder="Ej. 600 123 456"></div>
     <div class="campo"><label>Correo electrónico <span class="nota-opc">(opcional)</span></label><input id="cEmail" value="${c.email}" placeholder="ana@ejemplo.com"></div>
     <div class="campo"><label>Observaciones <span class="nota-opc">(opcional)</span></label><textarea id="cNotas" rows="2" placeholder="Alguna preferencia o alergia...">${c.notas}</textarea></div>
-    <label class="check-linea"><input type="checkbox" id="cAcepta" ${c.acepta?"checked":""}> He leído y acepto la política de privacidad (texto de ejemplo: tus datos solo se usan para gestionar esta cita).</label>
+    <label class="check-linea"><input type="checkbox" id="cAcepta" ${c.acepta?"checked":""}> He leído y acepto la política de privacidad: <span style="font-style:italic">${NEGOCIO_PRIVACIDAD}</span></label>
     <label class="check-linea"><input type="checkbox" id="cAceptaMarketing" ${c.aceptaMarketing?"checked":""}> Quiero recibir ofertas y novedades por correo <span class="nota-opc">(opcional)</span>.</label>
 
     <div class="resumen">
@@ -1069,7 +1108,7 @@ function actualizarBotonConfirmar(){
 }
 
 async function iniciar(){
-  document.getElementById("pasosReserva").innerHTML = '<div class="panel"><p class="ayuda">Cargando tratamientos y disponibilidad…</p></div>';
+  document.getElementById("pasosReserva").innerHTML = '<div class="panel"><div class="cargando-elegante"><div class="anillo"></div><span>Cargando tratamientos y disponibilidad…</span></div></div>';
   await cargarDatosIniciales();
   pintarTrabajos();
   renderReserva();
@@ -1077,6 +1116,10 @@ async function iniciar(){
   irASeccion("reservar");
 }
 iniciar();
+
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
 </script>
 </body>
 </html>
