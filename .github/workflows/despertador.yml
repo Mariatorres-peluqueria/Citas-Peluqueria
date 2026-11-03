@@ -1,0 +1,39 @@
+name: Despertador Supabase
+
+# Hace una consulta ligera a Supabase cada día para que el proyecto
+# (plan gratis) no se pause por 7 días seguidos sin actividad. Y una
+# vez al mes deja una marca en el repositorio, para que GitHub no
+# desactive esta tarea programada por "inactividad" a los 60 días.
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # todos los días a las 08:00 UTC
+  workflow_dispatch: {}    # también se puede lanzar a mano desde GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  despertar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ping a Supabase
+        run: |
+          curl -s -o /dev/null -w "Respuesta de Supabase: %{http_code}\n" \
+            "https://fpqefyyykwtdzpaubdhd.supabase.co/rest/v1/services?select=id&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwcWVmeXl5a3d0ZHpwYXViZGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0Nzc5MzUsImV4cCI6MjEwOTA1MzkzNX0.1pzYsWG1Jyhn_PyD46AQIyfExk9ZMnrCaf3KvVkIVj4"
+
+      - name: Marca mensual (para que GitHub no desactive esta tarea)
+        run: |
+          if [ "$(date +%d)" = "01" ]; then
+            echo "Última revisión: $(date -u)" > ultima-revision.txt
+            git config user.email "actions@github.com"
+            git config user.name "Despertador"
+            git add ultima-revision.txt
+            git commit -m "Marca mensual del despertador" || echo "Sin cambios que subir"
+            git push
+          else
+            echo "Hoy no toca marca mensual."
+          fi
