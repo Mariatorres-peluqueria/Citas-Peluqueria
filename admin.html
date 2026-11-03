@@ -75,6 +75,24 @@
   .chips-servicios{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .chip{display:flex;align-items:center;gap:5px;background:var(--crema);border:1px solid var(--beige);border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer}
   .chip input{margin:0}
+
+  .calendario{margin:14px 0 4px}
+  .cal-cabecera{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:10px}
+  .cal-cabecera b{text-transform:capitalize;min-width:150px;text-align:center;font-size:14px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal-grid-cabecera{margin-bottom:4px}
+  .cal-dia-nombre{text-align:center;font-size:10.5px;color:var(--texto-claro);text-transform:uppercase;font-weight:600;letter-spacing:.3px}
+  .cal-dia{
+    aspect-ratio:1;border:1px solid var(--beige);border-radius:8px;background:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    cursor:pointer;font-size:13px;color:var(--texto);padding:0;font-family:inherit;
+  }
+  .cal-dia:hover{border-color:var(--dorado)}
+  .cal-vacio{border:none;background:none;cursor:default}
+  .cal-hoy{border-color:var(--dorado-profundo);font-weight:700}
+  .cal-elegido{background:var(--negro);color:#fff;border-color:var(--negro)}
+  .cal-punto{font-size:9.5px;min-width:15px;height:15px;padding:0 3px;border-radius:999px;background:var(--dorado-profundo);color:#fff;display:flex;align-items:center;justify-content:center}
+  .cal-elegido .cal-punto{background:var(--dorado-suave);color:var(--negro)}
   .mensaje{font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:12px}
   .mensaje.ok{background:#e5efe7;color:var(--ok)}
   .mensaje.error{background:#f3e6e6;color:var(--error)}
@@ -107,6 +125,8 @@ const estado = {
   datos: { servicios:[], profesionales:[], relacion:[], horario:[], negocio:null, bloqueos:[] },
   fechaAgenda: new Date().toISOString().slice(0,10),
   citasAgenda: null, // null = sin cargar todavía
+  calendario: { anio: new Date().getFullYear(), mes: new Date().getMonth() }, // mes: 0 = enero
+  resumenMes: null, // {"YYYY-MM-DD": numDeCitas} del mes del calendario
   mostrarNuevaCita: false,
   informeDesde: primerDiaDelMes(),
   informeHasta: new Date().toISOString().slice(0,10)
@@ -196,6 +216,23 @@ async function cargarCitasAgenda(){
   estado.citasAgenda = data || [];
 }
 
+// Para pintar un puntito con el número de citas en cada día del mes
+// que se ve en el calendario (no cuenta las canceladas).
+async function cargarResumenMes(){
+  const { anio, mes } = estado.calendario;
+  const inicio = new Date(anio, mes, 1).toISOString().slice(0,10);
+  const fin = new Date(anio, mes+1, 0).toISOString().slice(0,10);
+  const { data, error } = await sb.from("appointments").select("fecha,estado").gte("fecha", inicio).lte("fecha", fin);
+  const resumen = {};
+  if(!error){
+    (data||[]).forEach(c=>{
+      if(c.estado==="cancelada") return;
+      resumen[c.fecha] = (resumen[c.fecha]||0) + 1;
+    });
+  }
+  estado.resumenMes = resumen;
+}
+
 function mostrarMensaje(tipo, texto){
   estado.mensaje = { tipo, texto };
   render();
@@ -218,6 +255,11 @@ async function render(){
     estado._cargandoAgenda = true;
     await cargarCitasAgenda();
     estado._cargandoAgenda = false;
+  }
+  if(estado.tab==="agenda" && estado.resumenMes===null && !estado._cargandoResumen){
+    estado._cargandoResumen = true;
+    await cargarResumenMes();
+    estado._cargandoResumen = false;
   }
 
   raiz.innerHTML = `
@@ -243,7 +285,7 @@ async function render(){
   enlazarSalir();
   document.querySelectorAll(".tab-btn").forEach(b=>b.onclick=()=>{
     estado.tab=b.dataset.tab;
-    if(estado.tab==="agenda") estado.citasAgenda = null;
+    if(estado.tab==="agenda"){ estado.citasAgenda = null; estado.resumenMes = null; }
     render();
   });
   if(estado.tab==="agenda") enlazarAgenda();
@@ -315,19 +357,56 @@ function filaCita(c){
   </tr>`;
 }
 
+const NOMBRES_MES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+function vistaCalendario(){
+  const { anio, mes } = estado.calendario;
+  const ultimoDia = new Date(anio, mes+1, 0).getDate();
+  let inicioSemana = new Date(anio, mes, 1).getDay(); // 0 = domingo
+  inicioSemana = (inicioSemana + 6) % 7; // pasa a que la semana empiece en lunes
+  const hoyISO = new Date().toISOString().slice(0,10);
+  const resumen = estado.resumenMes || {};
+
+  let celdas = "";
+  for(let i=0; i<inicioSemana; i++) celdas += `<div class="cal-dia cal-vacio"></div>`;
+  for(let d=1; d<=ultimoDia; d++){
+    const fechaISO = `${anio}-${String(mes+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const nCitas = resumen[fechaISO] || 0;
+    const clases = ["cal-dia"];
+    if(fechaISO === hoyISO) clases.push("cal-hoy");
+    if(fechaISO === estado.fechaAgenda) clases.push("cal-elegido");
+    celdas += `<button type="button" class="${clases.join(" ")}" data-fecha="${fechaISO}">
+      <span>${d}</span>
+      ${nCitas>0 ? `<span class="cal-punto">${nCitas}</span>` : ""}
+    </button>`;
+  }
+
+  return `
+  <div class="calendario">
+    <div class="cal-cabecera">
+      <button class="btn btn-texto" id="btnMesAnterior" style="color:var(--texto)">←</button>
+      <b>${NOMBRES_MES[mes]} ${anio}</b>
+      <button class="btn btn-texto" id="btnMesSiguiente" style="color:var(--texto)">→</button>
+    </div>
+    <div class="cal-grid cal-grid-cabecera">${["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(d=>`<div class="cal-dia-nombre">${d}</div>`).join("")}</div>
+    <div class="cal-grid">${celdas}</div>
+    <button class="btn btn-texto btn-peq" id="btnIrHoy" style="color:var(--texto);margin-top:8px">Ir a hoy</button>
+  </div>`;
+}
+
 function vistaAgenda(){
   const citas = estado.citasAgenda || [];
+  const fechaBonita = new Date(estado.fechaAgenda+"T00:00:00").toLocaleDateString("es-ES", {weekday:"long", day:"numeric", month:"long"});
   return `
   <div class="panel">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-      <h2>Agenda del día</h2>
+      <h2>Agenda</h2>
       <button class="btn btn-dorado btn-peq" id="btnAbrirNuevaCita">+ Nueva cita</button>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin:14px 0;flex-wrap:wrap">
-      <button class="btn btn-texto" id="btnDiaAnterior" style="color:var(--texto)">← Anterior</button>
-      <input type="date" id="fechaAgendaInput" value="${estado.fechaAgenda}">
-      <button class="btn btn-texto" id="btnDiaSiguiente" style="color:var(--texto)">Siguiente →</button>
-    </div>
+    ${vistaCalendario()}
+  </div>
+  <div class="panel">
+    <h2 style="text-transform:capitalize">${fechaBonita}</h2>
     ${estado._cargandoAgenda ? `<p class="ayuda">Cargando…</p>` : citas.length===0 ? `<p class="ayuda">No hay citas este día.</p>` : `
     <div style="overflow-x:auto">
     <table class="tabla-admin">
@@ -370,19 +449,29 @@ function panelNuevaCita(){
 }
 
 function enlazarAgenda(){
-  document.getElementById("fechaAgendaInput").onchange = async (e)=>{
-    estado.fechaAgenda = e.target.value;
+  document.querySelectorAll(".cal-dia[data-fecha]").forEach(btn=>btn.onclick = ()=>{
+    estado.fechaAgenda = btn.dataset.fecha;
     estado.citasAgenda = null;
     render();
-  };
-  document.getElementById("btnDiaAnterior").onclick = ()=>{
-    estado.fechaAgenda = sumarDias(estado.fechaAgenda, -1);
-    estado.citasAgenda = null;
+  });
+  document.getElementById("btnMesAnterior").onclick = ()=>{
+    estado.calendario.mes--;
+    if(estado.calendario.mes < 0){ estado.calendario.mes = 11; estado.calendario.anio--; }
+    estado.resumenMes = null;
     render();
   };
-  document.getElementById("btnDiaSiguiente").onclick = ()=>{
-    estado.fechaAgenda = sumarDias(estado.fechaAgenda, 1);
+  document.getElementById("btnMesSiguiente").onclick = ()=>{
+    estado.calendario.mes++;
+    if(estado.calendario.mes > 11){ estado.calendario.mes = 0; estado.calendario.anio++; }
+    estado.resumenMes = null;
+    render();
+  };
+  document.getElementById("btnIrHoy").onclick = ()=>{
+    const hoy = new Date();
+    estado.calendario = { anio: hoy.getFullYear(), mes: hoy.getMonth() };
+    estado.fechaAgenda = hoy.toISOString().slice(0,10);
     estado.citasAgenda = null;
+    estado.resumenMes = null;
     render();
   };
   document.getElementById("btnAbrirNuevaCita").onclick = ()=>{ estado.mostrarNuevaCita = true; render(); };
@@ -392,19 +481,24 @@ function enlazarAgenda(){
   document.querySelectorAll(".cambiar-estado").forEach(btn=>btn.onclick = async ()=>{
     btn.disabled = true;
     const { error } = await sb.from("appointments").update({ estado: btn.dataset.estado }).eq("id", btn.dataset.id);
-    if(error){ mostrarMensaje("error", "No se pudo actualizar: " + error.message); return; }
+    if(error){ mostrarMensaje("error", "No se pudo actualizar: " + error.message); btn.disabled = false; return; }
     estado.citasAgenda = null;
+    estado.resumenMes = null;
     await cargarCitasAgenda();
+    await cargarResumenMes();
     mostrarMensaje("ok", "Cita actualizada.");
   });
 
   document.querySelectorAll(".borrar-cita").forEach(btn=>btn.onclick = async ()=>{
     if(!confirm("¿Borrar esta cita para siempre? No se puede deshacer (útil para quitar citas de prueba). No es lo mismo que cancelar.")) return;
     btn.disabled = true;
-    const { error } = await sb.from("appointments").delete().eq("id", btn.dataset.id);
-    if(error){ mostrarMensaje("error", "No se pudo borrar: " + error.message); return; }
+    const { error, count } = await sb.from("appointments").delete({ count: "exact" }).eq("id", btn.dataset.id);
+    if(error){ mostrarMensaje("error", "No se pudo borrar: " + error.message); btn.disabled = false; return; }
+    if(!count){ mostrarMensaje("error", "No se ha borrado ninguna cita (puede que ya no exista)."); btn.disabled = false; return; }
     estado.citasAgenda = null;
+    estado.resumenMes = null;
     await cargarCitasAgenda();
+    await cargarResumenMes();
     mostrarMensaje("ok", "Cita borrada.");
   });
 
