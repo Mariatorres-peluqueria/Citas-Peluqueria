@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Panel de administración — María Torres</title>
+<link rel="icon" type="image/jpeg" href="imagenes/logo-mf.jpg">
+<meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -17,12 +19,18 @@
   body{margin:0;background:var(--crema);color:var(--texto);font-family:'Poppins',sans-serif;min-height:100vh}
   h1,h2,h3{font-family:'Playfair Display',serif;margin:0}
   button{font-family:inherit}
+  ::selection{background:var(--dorado);color:#fff}
+  a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+    outline:2px solid var(--dorado);outline-offset:2px;
+  }
 
   /* Login */
-  .pantalla-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-  .caja-login{background:#fff;border-radius:var(--radio);box-shadow:var(--sombra);padding:36px 32px;width:100%;max-width:360px}
+  .pantalla-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(180deg,var(--crema) 0%,var(--beige) 100%)}
+  .caja-login{background:#fff;border-radius:var(--radio);box-shadow:var(--sombra);padding:40px 32px;width:100%;max-width:360px}
+  .caja-login .sello-login{width:56px;height:56px;border-radius:50%;margin:0 auto 18px;overflow:hidden;border:1.5px solid var(--dorado);box-shadow:0 4px 14px rgba(23,20,15,.15)}
+  .caja-login .sello-login img{width:100%;height:100%;object-fit:cover}
   .caja-login h1{font-size:22px;text-align:center;margin-bottom:4px}
-  .caja-login .subt{text-align:center;color:var(--texto-claro);font-size:13px;margin-bottom:24px}
+  .caja-login .subt{text-align:center;color:var(--texto-claro);font-size:11px;letter-spacing:1.8px;text-transform:uppercase;margin-bottom:26px}
 
   /* Estructura general */
   .topbar{background:var(--negro);color:#fff;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid var(--dorado)}
@@ -48,6 +56,12 @@
   .btn-negro{background:var(--negro);color:var(--dorado-suave)}
   .btn-texto{background:none;color:var(--error);font-size:12.5px;text-decoration:underline;padding:4px}
   .btn-peq{padding:6px 12px;font-size:12px}
+  .btn-x{
+    width:26px;height:26px;padding:0;border-radius:50%;border:1.5px solid transparent;
+    background:none;color:var(--texto-claro);font-size:16px;line-height:1;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  }
+  .btn-x:hover{background:#f3e6e6;border-color:#e9c9c9;color:var(--error)}
 
   table.tabla-admin{width:100%;border-collapse:collapse;font-size:13.5px}
   table.tabla-admin th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--texto-claro);padding:6px 8px;border-bottom:1.5px solid var(--beige)}
@@ -90,7 +104,7 @@ const estado = {
   esAdmin: null, // null = sin comprobar, true/false ya comprobado
   tab: "agenda",
   mensaje: null, // {tipo:'ok'|'error', texto}
-  datos: { servicios:[], profesionales:[], relacion:[], horario:[], negocio:null },
+  datos: { servicios:[], profesionales:[], relacion:[], horario:[], negocio:null, bloqueos:[] },
   fechaAgenda: new Date().toISOString().slice(0,10),
   citasAgenda: null, // null = sin cargar todavía
   mostrarNuevaCita: false,
@@ -117,6 +131,7 @@ function vistaLogin(error){
   return `
   <div class="pantalla-login">
     <div class="caja-login">
+      <div class="sello-login"><img src="imagenes/logo-mf.jpg" alt="Logo"></div>
       <h1>María Torres</h1>
       <div class="subt">Panel de administración</div>
       ${error ? `<div class="mensaje error">${error}</div>` : ""}
@@ -156,18 +171,20 @@ async function iniciar(){
 /* ===================== CARGA DE DATOS ===================== */
 
 async function cargarDatos(){
-  const [sv, pr, rl, hr, ng] = await Promise.all([
+  const [sv, pr, rl, hr, ng, bl] = await Promise.all([
     sb.from("services").select("*").order("categoria").order("orden"),
     sb.from("professionals").select("*").order("orden"),
     sb.from("professional_services").select("*"),
     sb.from("business_hours").select("*").order("dia_semana"),
-    sb.from("business_settings").select("*").maybeSingle()
+    sb.from("business_settings").select("*").maybeSingle(),
+    sb.from("blocked_slots").select("*,professionals(nombre)").order("desde")
   ]);
   estado.datos.servicios = sv.data || [];
   estado.datos.profesionales = pr.data || [];
   estado.datos.relacion = rl.data || [];
   estado.datos.horario = hr.data || [];
   estado.datos.negocio = ng.data;
+  estado.datos.bloqueos = bl.data || [];
 }
 
 async function cargarCitasAgenda(){
@@ -209,7 +226,7 @@ async function render(){
       <div><span class="quien">${estado.nombreAdmin}</span> &nbsp; <button class="btn btn-texto" id="btnSalir" style="color:var(--dorado-suave)">Salir</button></div>
     </div>
     <div class="tabs">
-      ${["agenda","informes","negocio","servicios","profesionales","horario"].map(t=>`
+      ${["agenda","informes","negocio","servicios","profesionales","horario","vacaciones"].map(t=>`
         <button class="tab-btn ${estado.tab===t?'activa':''}" data-tab="${t}">${etiquetaTab(t)}</button>
       `).join("")}
     </div>
@@ -221,6 +238,7 @@ async function render(){
       ${estado.tab==="servicios" ? vistaServicios() : ""}
       ${estado.tab==="profesionales" ? vistaProfesionales() : ""}
       ${estado.tab==="horario" ? vistaHorario() : ""}
+      ${estado.tab==="vacaciones" ? vistaVacaciones() : ""}
     </div>`;
   enlazarSalir();
   document.querySelectorAll(".tab-btn").forEach(b=>b.onclick=()=>{
@@ -234,10 +252,11 @@ async function render(){
   if(estado.tab==="servicios") enlazarServicios();
   if(estado.tab==="profesionales") enlazarProfesionales();
   if(estado.tab==="horario") enlazarHorario();
+  if(estado.tab==="vacaciones") enlazarVacaciones();
 }
 
 function etiquetaTab(t){
-  return {agenda:"Agenda", informes:"Informes", negocio:"Datos del negocio", servicios:"Servicios y precios", profesionales:"Profesionales", horario:"Horario"}[t];
+  return {agenda:"Agenda", informes:"Informes", negocio:"Datos del negocio", servicios:"Servicios y precios", profesionales:"Profesionales", horario:"Horario", vacaciones:"Vacaciones"}[t];
 }
 
 function enlazarLogin(){
@@ -290,7 +309,9 @@ function filaCita(c){
     <td style="font-size:12.5px">${servicios}</td>
     <td>${Number(c.precio_total).toFixed(2)} €</td>
     <td><span class="badge ${c.estado==='cancelada'?'inactivo':'activo'}">${etiquetaEstadoCita(c.estado)}</span></td>
-    <td style="white-space:nowrap">${acciones.join(" ")}</td>
+    <td style="white-space:nowrap;display:flex;align-items:center;gap:4px">${acciones.join(" ")}
+      <button class="btn-x borrar-cita" data-id="${c.id}" title="Borrar cita para siempre (p. ej. una cita de prueba)">×</button>
+    </td>
   </tr>`;
 }
 
@@ -377,6 +398,16 @@ function enlazarAgenda(){
     mostrarMensaje("ok", "Cita actualizada.");
   });
 
+  document.querySelectorAll(".borrar-cita").forEach(btn=>btn.onclick = async ()=>{
+    if(!confirm("¿Borrar esta cita para siempre? No se puede deshacer (útil para quitar citas de prueba). No es lo mismo que cancelar.")) return;
+    btn.disabled = true;
+    const { error } = await sb.from("appointments").delete().eq("id", btn.dataset.id);
+    if(error){ mostrarMensaje("error", "No se pudo borrar: " + error.message); return; }
+    estado.citasAgenda = null;
+    await cargarCitasAgenda();
+    mostrarMensaje("ok", "Cita borrada.");
+  });
+
   const btnCrear = document.getElementById("btnCrearCita");
   if(btnCrear) btnCrear.onclick = async ()=>{
     const nombre = document.getElementById("ncNombre").value.trim();
@@ -424,6 +455,11 @@ function vistaInformes(){
     </div>
     <button class="btn btn-dorado" id="btnDescargarExcel">⬇ Descargar Excel</button>
     <div id="resumenInforme" style="margin-top:18px"></div>
+  </div>
+  <div class="panel" style="margin-top:22px">
+    <h2>Copia de seguridad</h2>
+    <p class="ayuda">Descarga un archivo con todos los datos del negocio (citas, clientes, servicios, profesionales, horario y ajustes) por si algún día se necesitan recuperar. Guárdalo en un sitio seguro, por ejemplo tu correo o una carpeta en el ordenador.</p>
+    <button class="btn btn-negro" id="btnCopiaSeguridad">⬇ Descargar copia de seguridad</button>
   </div>`;
 }
 
@@ -461,6 +497,37 @@ function enlazarInformes(){
     if(error){ mostrarMensaje("error", "No se pudo generar: " + error.message); return; }
     if(!data.length){ mostrarMensaje("error", "No hay citas en ese periodo."); return; }
     generarExcel(data, desde, hasta);
+  };
+
+  document.getElementById("btnCopiaSeguridad").onclick = async (e)=>{
+    const btn = e.target; btn.disabled = true; btn.textContent = "Preparando…";
+    const [cl, ap, asv, sv, pr, rl, hr, ng, bl] = await Promise.all([
+      sb.from("clientes").select("*"),
+      sb.from("appointments").select("*"),
+      sb.from("appointment_services").select("*"),
+      sb.from("services").select("*"),
+      sb.from("professionals").select("*"),
+      sb.from("professional_services").select("*"),
+      sb.from("business_hours").select("*"),
+      sb.from("business_settings").select("*"),
+      sb.from("blocked_slots").select("*")
+    ]);
+    const error = cl.error || ap.error || asv.error || sv.error || pr.error || rl.error || hr.error || ng.error || bl.error;
+    btn.disabled = false; btn.textContent = "⬇ Descargar copia de seguridad";
+    if(error){ mostrarMensaje("error", "No se pudo generar la copia: " + error.message); return; }
+    const copia = {
+      generado: new Date().toISOString(),
+      clientes: cl.data, appointments: ap.data, appointment_services: asv.data,
+      services: sv.data, professionals: pr.data, professional_services: rl.data,
+      business_hours: hr.data, business_settings: ng.data, blocked_slots: bl.data
+    };
+    const blob = new Blob([JSON.stringify(copia, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `copia-seguridad_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    mostrarMensaje("ok", "Copia de seguridad descargada.");
   };
 }
 
@@ -507,7 +574,10 @@ function vistaNegocio(){
   <div class="panel">
     <h2>Datos del negocio</h2>
     <p class="ayuda">Esto es lo que ven tus clientas en la web, en "Inicio" y "Ubicación".</p>
-    <div class="campo"><label>Nombre del negocio</label><input id="nNombre" value="${n.nombre_negocio||""}"></div>
+    <div class="fila-campos">
+      <div class="campo"><label>Nombre del negocio</label><input id="nNombre" value="${n.nombre_negocio||""}"></div>
+      <div class="campo"><label>Año de fundación</label><input id="nAnio" type="number" value="${n.anio_fundacion||""}" placeholder="2026"></div>
+    </div>
     <div class="fila-campos">
       <div class="campo"><label>Teléfono</label><input id="nTelefono" value="${n.telefono||""}"></div>
       <div class="campo"><label>Correo de contacto</label><input id="nEmail" value="${n.email_contacto||""}"></div>
@@ -517,7 +587,8 @@ function vistaNegocio(){
       <div class="campo"><label>Instagram (enlace completo)</label><input id="nInstagram" value="${n.instagram_url||""}" placeholder="https://instagram.com/tunegocio"></div>
       <div class="campo"><label>TikTok (enlace completo)</label><input id="nTiktok" value="${n.tiktok_url||""}" placeholder="https://tiktok.com/@tunegocio"></div>
     </div>
-    <p class="ayuda">El botón de WhatsApp se calcula solo a partir del teléfono de arriba, no hace falta ponerlo aparte.</p>
+    <div class="campo"><label>WhatsApp — enlace directo <span class="nota-opc">(opcional)</span></label><input id="nWhatsapp" value="${n.whatsapp_url||""}" placeholder="https://wa.me/message/..."></div>
+    <p class="ayuda">Si dejas el de WhatsApp vacío, la web calcula uno automáticamente a partir del teléfono de arriba.</p>
     <div class="campo"><label>Política de privacidad (texto que se muestra al reservar)</label><textarea id="nPrivacidad" rows="3">${n.texto_politica_privacidad||""}</textarea></div>
     <button class="btn btn-dorado" id="btnGuardarNegocio">Guardar cambios</button>
   </div>`;
@@ -528,11 +599,13 @@ function enlazarNegocio(){
     const btn = e.target; btn.disabled = true; btn.textContent = "Guardando…";
     const { error } = await sb.from("business_settings").update({
       nombre_negocio: document.getElementById("nNombre").value.trim(),
+      anio_fundacion: Number(document.getElementById("nAnio").value) || null,
       telefono: document.getElementById("nTelefono").value.trim(),
       email_contacto: document.getElementById("nEmail").value.trim(),
       direccion: document.getElementById("nDireccion").value.trim(),
       instagram_url: document.getElementById("nInstagram").value.trim() || null,
       tiktok_url: document.getElementById("nTiktok").value.trim() || null,
+      whatsapp_url: document.getElementById("nWhatsapp").value.trim() || null,
       texto_politica_privacidad: document.getElementById("nPrivacidad").value.trim()
     }).eq("id", true);
     if(error){ mostrarMensaje("error", "No se pudo guardar: " + error.message); return; }
@@ -551,7 +624,10 @@ function vistaServicios(){
       <td><input type="number" class="sPrecio" value="${s.precio}" min="0" step="0.5"></td>
       <td><input type="number" class="sDuracion" value="${s.duracion_minutos}" min="5" step="5"></td>
       <td style="text-align:center"><input type="checkbox" class="sActivo" ${s.activo?"checked":""}></td>
-      <td><button class="btn btn-peq btn-dorado guardar-servicio">Guardar</button></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-peq btn-dorado guardar-servicio">Guardar</button>
+        <button class="btn-x borrar-servicio" title="Borrar servicio">×</button>
+      </td>
     </tr>`).join("");
   return `
   <div class="panel">
@@ -588,6 +664,24 @@ function enlazarServicios(){
     await cargarDatos();
     mostrarMensaje("ok", "Servicio guardado.");
   });
+  document.querySelectorAll(".borrar-servicio").forEach(btn=>btn.onclick = async ()=>{
+    const tr = btn.closest("tr");
+    const id = tr.dataset.id;
+    const nombre = tr.querySelector(".sNombre").value;
+    if(!confirm(`¿Borrar "${nombre}" para siempre? No se puede deshacer.`)) return;
+    btn.disabled = true; btn.textContent = "...";
+    const { error } = await sb.from("services").delete().eq("id", id);
+    if(error){
+      const tieneCitas = error.message.includes("foreign key") || error.code === "23503";
+      mostrarMensaje("error", tieneCitas
+        ? `No se puede borrar "${nombre}": tiene citas guardadas en el historial. Desactívalo, o borra antes esas citas desde Agenda.`
+        : "No se pudo borrar: " + error.message);
+      btn.disabled = false; btn.textContent = "×";
+      return;
+    }
+    await cargarDatos();
+    mostrarMensaje("ok", `"${nombre}" borrado.`);
+  });
   document.getElementById("btnNuevoServicio").onclick = async ()=>{
     const nombre = document.getElementById("nuevoNombre").value.trim();
     const precio = Number(document.getElementById("nuevoPrecio").value);
@@ -611,7 +705,7 @@ function vistaProfesionales(){
     return `
     <div class="panel" data-id="${p.id}">
       <div class="fila-campos" style="align-items:end">
-        <div class="campo"><label>Nombre</label><input type="text" class="pNombre" value="${p.nombre}"></div>
+        <div class="campo"><label>Nombre</label><input type="text" class="pNombre" value="${p.nombre}" placeholder="(sin nombre — revisa si hace falta)"></div>
         <label style="display:flex;align-items:center;gap:6px;margin-bottom:14px"><input type="checkbox" class="pActivo" ${p.activo?"checked":""}> Activo</label>
       </div>
       <label style="font-size:12.5px;font-weight:600;color:var(--texto-claro)">Servicios que realiza</label>
@@ -620,7 +714,10 @@ function vistaProfesionales(){
           <label class="chip"><input type="checkbox" class="pServicio" value="${s.id}" ${misServicios.includes(s.id)?"checked":""}> ${s.nombre}</label>
         `).join("")}
       </div>
-      <div style="margin-top:14px"><button class="btn btn-peq btn-dorado guardar-profesional">Guardar</button></div>
+      <div style="margin-top:14px;display:flex;align-items:center;gap:8px">
+        <button class="btn btn-peq btn-dorado guardar-profesional">Guardar</button>
+        <button class="btn-x borrar-profesional" title="Borrar profesional">×</button>
+      </div>
     </div>`;
   }).join("");
   return `
@@ -660,6 +757,24 @@ function enlazarProfesionales(){
     if(error){ mostrarMensaje("error", "No se pudo guardar: " + error.message); return; }
     await cargarDatos();
     mostrarMensaje("ok", "Profesional guardado.");
+  });
+  document.querySelectorAll(".borrar-profesional").forEach(btn=>btn.onclick = async ()=>{
+    const panel = btn.closest(".panel");
+    const id = panel.dataset.id;
+    const nombre = panel.querySelector(".pNombre").value.trim() || "este profesional sin nombre";
+    if(!confirm(`¿Borrar a "${nombre}" para siempre? No se puede deshacer.`)) return;
+    btn.disabled = true; btn.textContent = "...";
+    const { error } = await sb.from("professionals").delete().eq("id", id);
+    if(error){
+      const tieneCitas = error.message.includes("foreign key") || error.code === "23503";
+      mostrarMensaje("error", tieneCitas
+        ? `No se puede borrar a "${nombre}": tiene citas guardadas en el historial. Desactívalo, o borra antes esas citas desde Agenda.`
+        : "No se pudo borrar: " + error.message);
+      btn.disabled = false; btn.textContent = "×";
+      return;
+    }
+    await cargarDatos();
+    mostrarMensaje("ok", `"${nombre}" borrado.`);
   });
 }
 
@@ -713,6 +828,76 @@ function enlazarHorario(){
     await cargarDatos();
     mostrarMensaje("ok", "Horario guardado.");
   };
+}
+
+/* ===================== VACACIONES Y BLOQUEOS ===================== */
+
+function vistaVacaciones(){
+  const filas = (estado.datos.bloqueos||[]).map(b=>{
+    const desde = new Date(b.desde), hasta = new Date(b.hasta);
+    const quien = b.professionals?.nombre || "Todo el negocio";
+    return `<tr data-id="${b.id}">
+      <td>${quien}</td>
+      <td>${desde.toLocaleDateString("es-ES")}</td>
+      <td>${hasta.toLocaleDateString("es-ES")}</td>
+      <td>${b.motivo||""}</td>
+      <td><button class="btn btn-peq btn-texto borrar-bloqueo" style="color:var(--error)">Borrar</button></td>
+    </tr>`;
+  }).join("");
+  return `
+  <div class="panel">
+    <h2>Vacaciones y bloqueos</h2>
+    <p class="ayuda">Bloquea días u horas en los que no se puede reservar — vacaciones del negocio, baja de alguien, o solo unas horas concretas. Elige "Todo el negocio" o una profesional concreta.</p>
+    <div class="fila-campos">
+      <div class="campo"><label>Quién</label>
+        <select id="vQuien">
+          <option value="">Todo el negocio</option>
+          ${estado.datos.profesionales.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join("")}
+        </select>
+      </div>
+      <div class="campo"><label>Desde (fecha)</label><input type="date" id="vDesde"></div>
+      <div class="campo"><label>Hasta (fecha, incluida)</label><input type="date" id="vHasta"></div>
+    </div>
+    <div class="campo"><label>Motivo <span class="nota-opc">(opcional)</span></label><input type="text" id="vMotivo" placeholder="Vacaciones, formación…"></div>
+    <button class="btn btn-negro" id="btnNuevoBloqueo">+ Añadir bloqueo</button>
+    ${filas ? `
+    <table class="tabla-admin" style="margin-top:22px">
+      <tr><th>Quién</th><th>Desde</th><th>Hasta</th><th>Motivo</th><th></th></tr>
+      ${filas}
+    </table>` : `<p class="ayuda" style="margin-top:18px">No hay ningún bloqueo guardado.</p>`}
+  </div>`;
+}
+
+function enlazarVacaciones(){
+  document.getElementById("btnNuevoBloqueo").onclick = async (e)=>{
+    const btn = e.target;
+    const quien = document.getElementById("vQuien").value || null;
+    const desde = document.getElementById("vDesde").value;
+    const hasta = document.getElementById("vHasta").value;
+    if(!desde || !hasta){ mostrarMensaje("error", "Pon la fecha de inicio y de fin."); return; }
+    if(hasta < desde){ mostrarMensaje("error", "La fecha de fin no puede ser antes que la de inicio."); return; }
+    // "Hasta" incluye ese día entero: se guarda hasta las 00:00 del día siguiente.
+    const hastaSiguiente = new Date(hasta + "T00:00:00"); hastaSiguiente.setDate(hastaSiguiente.getDate()+1);
+    btn.disabled = true; btn.textContent = "Guardando…";
+    const { error } = await sb.from("blocked_slots").insert({
+      professional_id: quien,
+      desde: desde + "T00:00:00",
+      hasta: hastaSiguiente.toISOString().slice(0,19),
+      motivo: document.getElementById("vMotivo").value.trim() || null
+    });
+    btn.disabled = false; btn.textContent = "+ Añadir bloqueo";
+    if(error){ mostrarMensaje("error", "No se pudo guardar: " + error.message); return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Bloqueo añadido.");
+  };
+  document.querySelectorAll(".borrar-bloqueo").forEach(btn=>btn.onclick = async ()=>{
+    const id = btn.closest("tr").dataset.id;
+    if(!confirm("¿Quitar este bloqueo?")) return;
+    const { error } = await sb.from("blocked_slots").delete().eq("id", id);
+    if(error){ mostrarMensaje("error", "No se pudo borrar: " + error.message); return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Bloqueo quitado.");
+  });
 }
 
 iniciar();
