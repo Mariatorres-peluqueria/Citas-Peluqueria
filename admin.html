@@ -50,6 +50,16 @@
   .campo input:focus,.campo textarea:focus{outline:none;border-color:var(--dorado)}
   .fila-campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 
+  .caja-clave{position:relative}
+  .caja-clave input{padding-right:42px}
+  .ver-clave{
+    position:absolute;right:4px;top:50%;transform:translateY(-50%);
+    width:30px;height:30px;padding:0;border:none;background:none;cursor:pointer;
+    color:var(--texto-claro);display:flex;align-items:center;justify-content:center;border-radius:6px;
+  }
+  .ver-clave:hover{color:var(--dorado-profundo);background:var(--crema)}
+  .ver-clave svg{width:18px;height:18px}
+
   .btn{padding:10px 18px;border-radius:999px;border:none;font-weight:600;font-size:13.5px;cursor:pointer}
   .btn-dorado{background:linear-gradient(135deg,var(--dorado),var(--dorado-profundo));color:#fff}
   .btn-dorado:disabled{opacity:.5;cursor:not-allowed}
@@ -120,9 +130,14 @@ const CATEGORIAS = [
 const estado = {
   sesion: null,
   esAdmin: null, // null = sin comprobar, true/false ya comprobado
+  mfaVerificado: false, // la sesión ya tiene el segundo paso (código del móvil) comprobado
+  mfaEnPantalla: null, // {factorId, alta, qr, secreto} mientras se pide/da de alta el código
+  errorMfa: null,
+  mostrarCambioClave: false,
+  errorClave: null,
   tab: "agenda",
   mensaje: null, // {tipo:'ok'|'error', texto}
-  datos: { servicios:[], profesionales:[], relacion:[], horario:[], negocio:null, bloqueos:[] },
+  datos: { servicios:[], profesionales:[], relacion:[], horario:[], negocio:null, bloqueos:[], trabajos:[] },
   fechaAgenda: new Date().toISOString().slice(0,10),
   citasAgenda: null, // null = sin cargar todavía
   calendario: { anio: new Date().getFullYear(), mes: new Date().getMonth() }, // mes: 0 = enero
@@ -143,6 +158,49 @@ function sumarDias(fechaISO, n){
   return d.toISOString().slice(0,10);
 }
 
+/* ===================== CONTRASEÑAS: ojo + norma de seguridad ===================== */
+
+const OJO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const OJO_TACHADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+
+// Campo de contraseña con el "ojo" para verla mientras se escribe (siempre empieza oculta).
+function campoClave(id, etiqueta, autocomplete){
+  return `<div class="campo"><label>${etiqueta}</label>
+    <div class="caja-clave">
+      <input type="password" id="${id}" autocomplete="${autocomplete}">
+      <button type="button" class="ver-clave" data-para="${id}" aria-label="Mostrar contraseña">${OJO}</button>
+    </div>
+  </div>`;
+}
+function enlazarOjos(){
+  document.querySelectorAll(".ver-clave").forEach(b=>{
+    b.onclick = (e)=>{
+      e.preventDefault();
+      const input = document.getElementById(b.dataset.para);
+      const mostrar = input.type === "password";
+      input.type = mostrar ? "text" : "password";
+      b.innerHTML = mostrar ? OJO_TACHADO : OJO;
+      b.setAttribute("aria-label", mostrar ? "Ocultar contraseña" : "Mostrar contraseña");
+      input.focus();
+    };
+  });
+}
+
+// Norma de seguridad de las contraseñas nuevas (la contraseña actual no hace falta cambiarla):
+// mínimo 10 caracteres, con mayúscula, minúscula, número y símbolo.
+const SIMBOLOS_CLAVE = "!@#$%^&*()_+-=[]{};'\\:\"|<>?,./`~";
+function fallaClave(c){
+  const falta = [];
+  if(!/[A-Z]/.test(c)) falta.push("una mayúscula");
+  if(!/[a-z]/.test(c)) falta.push("una minúscula");
+  if(!/[0-9]/.test(c)) falta.push("un número");
+  if(![...c].some(x => SIMBOLOS_CLAVE.includes(x))) falta.push("un símbolo (p. ej. ! ? # . - _ @ $ % & *)");
+  if(c.length < 10 || falta.length)
+    return "La contraseña debe tener al menos 10 caracteres" + (c.length < 10 ? ` (tiene ${c.length})` : "")
+      + (falta.length ? "; le falta " + falta.join(", ") : "") + ".";
+  return null;
+}
+
 const raiz = document.getElementById("raiz");
 
 /* ===================== LOGIN / SESIÓN ===================== */
@@ -156,7 +214,8 @@ function vistaLogin(error){
       <div class="subt">Panel de administración</div>
       ${error ? `<div class="mensaje error">${error}</div>` : ""}
       <div class="campo"><label>Correo</label><input type="email" id="lCorreo" autocomplete="username"></div>
-      <div class="campo"><label>Contraseña</label><input type="password" id="lClave" autocomplete="current-password"></div>
+      ${campoClave("lClave", "Contraseña", "current-password")}
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--texto-claro);margin-bottom:14px"><input type="checkbox" id="lRecordar"> Recordar mi correo en este dispositivo</label>
       <button class="btn btn-dorado" id="btnEntrar" style="width:100%">Entrar</button>
     </div>
   </div>`;
@@ -171,6 +230,80 @@ function vistaSinAcceso(correo){
       <button class="btn btn-negro" id="btnSalir" style="width:100%">Salir</button>
     </div>
   </div>`;
+}
+
+/* ===================== VERIFICACIÓN EN DOS PASOS (MFA) ===================== */
+// Los administradores necesitan, además de la contraseña, un código de 6 cifras de
+// una app de códigos del móvil (TOTP de Supabase Auth). La primera vez se da de alta
+// (código QR); las siguientes veces solo se pide el código. Supabase, en el servidor,
+// solo concede permisos de administrador con la sesión verificada (nivel "aal2") —
+// esta pantalla no es solo un aviso: sin pasar por aquí, nada de lo de abajo funciona.
+
+function vistaMFA(){
+  const p = estado.mfaEnPantalla;
+  return `
+  <div class="pantalla-login">
+    <div class="caja-login" style="text-align:center">
+      <div class="sello-login"><img src="imagenes/logo-mf.jpg" alt="Logo"></div>
+      <h1>Verificación en dos pasos</h1>
+      ${p.alta ? `
+        <p class="ayuda" style="text-align:left">Como administrador, hace falta un código del móvil además de la contraseña. Instala una app de códigos (Google Authenticator o Microsoft Authenticator) y escanea este código:</p>
+        <img src="${p.qr}" alt="Código QR" style="display:block;width:180px;height:180px;margin:10px auto;background:#fff;border-radius:8px;border:1px solid var(--beige)">
+        <p class="ayuda">¿No puedes escanearlo? Escribe en la app esta clave: <b style="word-break:break-all">${p.secreto}</b></p>
+        <p class="ayuda">Después escribe aquí el código de 6 cifras que te muestra la app.</p>
+      ` : `<p class="ayuda">Escribe el código de 6 cifras que muestra tu app de códigos.</p>`}
+      ${estado.errorMfa ? `<div class="mensaje error">${estado.errorMfa}</div>` : ""}
+      <div class="campo" style="text-align:left"><label>Código</label><input id="mfaCodigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"></div>
+      <button class="btn btn-dorado" id="btnVerificarMfa" style="width:100%">Verificar</button>
+      <button class="btn btn-texto" id="btnSalirMfa" style="width:100%;margin-top:6px">Salir</button>
+    </div>
+  </div>`;
+}
+
+async function prepararMFA(){
+  try{
+    const { data: nivel } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if(nivel && nivel.currentLevel === "aal2"){ estado.mfaVerificado = true; return; }
+    const { data: f, error } = await sb.auth.mfa.listFactors();
+    if(error) throw error;
+    const verificado = (f.totp || [])[0]; // (solo vienen los ya verificados)
+    if(verificado){ estado.mfaEnPantalla = { factorId: verificado.id, alta: false }; return; }
+    // Sin código dado de alta todavía: se limpian altas a medias y se empieza una nueva
+    for(const x of (f.all || []).filter(x => x.status !== "verified")) await sb.auth.mfa.unenroll({ factorId: x.id });
+    const { data: e, error: e2 } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: "Panel María Torres" });
+    if(e2) throw e2;
+    estado.mfaEnPantalla = { factorId: e.id, alta: true, qr: e.totp.qr_code, secreto: e.totp.secret };
+  }catch(err){
+    estado.errorMfa = "No se pudo preparar la verificación en dos pasos: " + (err.message || err);
+    estado.mfaEnPantalla = { factorId: null, alta: false, error: true };
+  }
+}
+
+function enlazarMFA(){
+  const campoCodigo = document.getElementById("mfaCodigo");
+  campoCodigo.focus();
+  campoCodigo.addEventListener("keydown", e=>{ if(e.key==="Enter") document.getElementById("btnVerificarMfa").click(); });
+  document.getElementById("btnVerificarMfa").onclick = async ()=>{
+    const codigo = campoCodigo.value.replace(/\D/g,"");
+    if(codigo.length !== 6){ estado.errorMfa = "Escribe las 6 cifras del código."; render(); return; }
+    const btn = document.getElementById("btnVerificarMfa");
+    btn.disabled = true; btn.textContent = "Comprobando…";
+    const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: estado.mfaEnPantalla.factorId, code: codigo });
+    if(error){
+      estado.errorMfa = "Código incorrecto o caducado. Espera al siguiente código e inténtalo de nuevo.";
+      render();
+      return;
+    }
+    estado.mfaVerificado = true;
+    estado.mfaEnPantalla = null;
+    estado.errorMfa = null;
+    render();
+  };
+  document.getElementById("btnSalirMfa").onclick = async ()=>{
+    await sb.auth.signOut();
+    estado.sesion = null; estado.esAdmin = false; estado.mfaVerificado = false; estado.mfaEnPantalla = null; estado.errorMfa = null;
+    render();
+  };
 }
 
 async function comprobarSesion(){
@@ -191,13 +324,14 @@ async function iniciar(){
 /* ===================== CARGA DE DATOS ===================== */
 
 async function cargarDatos(){
-  const [sv, pr, rl, hr, ng, bl] = await Promise.all([
+  const [sv, pr, rl, hr, ng, bl, tr] = await Promise.all([
     sb.from("services").select("*").order("categoria").order("orden"),
     sb.from("professionals").select("*").order("orden"),
     sb.from("professional_services").select("*"),
     sb.from("business_hours").select("*").order("dia_semana"),
     sb.from("business_settings").select("*").maybeSingle(),
-    sb.from("blocked_slots").select("*,professionals(nombre)").order("desde")
+    sb.from("blocked_slots").select("*,professionals(nombre)").order("desde"),
+    sb.from("trabajos").select("*").order("orden")
   ]);
   estado.datos.servicios = sv.data || [];
   estado.datos.profesionales = pr.data || [];
@@ -205,6 +339,7 @@ async function cargarDatos(){
   estado.datos.horario = hr.data || [];
   estado.datos.negocio = ng.data;
   estado.datos.bloqueos = bl.data || [];
+  estado.datos.trabajos = tr.data || [];
 }
 
 async function cargarCitasAgenda(){
@@ -246,6 +381,29 @@ async function render(){
   if(!estado.sesion){ raiz.innerHTML = vistaLogin(estado.errorLogin); enlazarLogin(); return; }
   if(!estado.esAdmin){ raiz.innerHTML = vistaSinAcceso(estado.sesion.user.email); enlazarSalir(); return; }
 
+  if(!estado.mfaVerificado){
+    if(!estado.mfaEnPantalla){
+      raiz.innerHTML = `<div class="pantalla-login"><p class="ayuda">Comprobando verificación en dos pasos…</p></div>`;
+      await prepararMFA();
+      render();
+      return;
+    }
+    raiz.innerHTML = vistaMFA();
+    enlazarMFA();
+    return;
+  }
+
+  if(estado.mostrarCambioClave){
+    raiz.innerHTML = `
+      <div class="topbar">
+        <h1>María Torres — Panel de administración</h1>
+        <div><span class="quien">${estado.nombreAdmin}</span></div>
+      </div>
+      <div class="contenedor">${vistaCambiarClave()}</div>`;
+    enlazarCambiarClave();
+    return;
+  }
+
   if(!estado.datos.negocio && !estado._cargando){
     estado._cargando = true;
     await cargarDatos();
@@ -265,10 +423,10 @@ async function render(){
   raiz.innerHTML = `
     <div class="topbar">
       <h1>María Torres — Panel de administración</h1>
-      <div><span class="quien">${estado.nombreAdmin}</span> &nbsp; <button class="btn btn-texto" id="btnSalir" style="color:var(--dorado-suave)">Salir</button></div>
+      <div><span class="quien">${estado.nombreAdmin}</span> &nbsp; <button class="btn btn-texto" id="btnCambiarClave" style="color:var(--dorado-suave)">Cambiar contraseña</button> &nbsp; <button class="btn btn-texto" id="btnSalir" style="color:var(--dorado-suave)">Salir</button></div>
     </div>
     <div class="tabs">
-      ${["agenda","informes","negocio","servicios","profesionales","horario","vacaciones"].map(t=>`
+      ${["agenda","informes","negocio","servicios","profesionales","horario","vacaciones","trabajos"].map(t=>`
         <button class="tab-btn ${estado.tab===t?'activa':''}" data-tab="${t}">${etiquetaTab(t)}</button>
       `).join("")}
     </div>
@@ -281,8 +439,10 @@ async function render(){
       ${estado.tab==="profesionales" ? vistaProfesionales() : ""}
       ${estado.tab==="horario" ? vistaHorario() : ""}
       ${estado.tab==="vacaciones" ? vistaVacaciones() : ""}
+      ${estado.tab==="trabajos" ? vistaTrabajos() : ""}
     </div>`;
   enlazarSalir();
+  document.getElementById("btnCambiarClave").onclick = ()=>{ estado.mostrarCambioClave = true; estado.errorClave = null; render(); };
   document.querySelectorAll(".tab-btn").forEach(b=>b.onclick=()=>{
     estado.tab=b.dataset.tab;
     if(estado.tab==="agenda"){ estado.citasAgenda = null; estado.resumenMes = null; }
@@ -295,13 +455,22 @@ async function render(){
   if(estado.tab==="profesionales") enlazarProfesionales();
   if(estado.tab==="horario") enlazarHorario();
   if(estado.tab==="vacaciones") enlazarVacaciones();
+  if(estado.tab==="trabajos") enlazarTrabajos();
 }
 
 function etiquetaTab(t){
-  return {agenda:"Agenda", informes:"Informes", negocio:"Datos del negocio", servicios:"Servicios y precios", profesionales:"Profesionales", horario:"Horario", vacaciones:"Vacaciones"}[t];
+  return {agenda:"Agenda", informes:"Informes", negocio:"Datos del negocio", servicios:"Servicios y precios", profesionales:"Profesionales", horario:"Horario", vacaciones:"Vacaciones", trabajos:"Trabajos"}[t];
 }
 
 function enlazarLogin(){
+  enlazarOjos();
+  // "Recordarme" solo recuerda el CORREO en este dispositivo (localStorage).
+  // La contraseña nunca se guarda aquí — eso lo ofrece el gestor de
+  // contraseñas del propio navegador/móvil, que es mucho más seguro.
+  try{
+    const correoGuardado = localStorage.getItem("correoRecordado");
+    if(correoGuardado){ document.getElementById("lCorreo").value = correoGuardado; document.getElementById("lRecordar").checked = true; }
+  }catch(e){}
   const btn = document.getElementById("btnEntrar");
   btn.onclick = async ()=>{
     btn.disabled = true; btn.textContent = "Entrando…";
@@ -310,9 +479,14 @@ function enlazarLogin(){
     const { data, error } = await sb.auth.signInWithPassword({ email: correo, password: clave });
     if(error){
       estado.errorLogin = "Correo o contraseña incorrectos.";
+      btn.disabled = false; btn.textContent = "Entrar";
       render();
       return;
     }
+    try{
+      if(document.getElementById("lRecordar").checked) localStorage.setItem("correoRecordado", correo);
+      else localStorage.removeItem("correoRecordado");
+    }catch(e){}
     estado.sesion = data.session;
     estado.errorLogin = null;
     await comprobarSesion();
@@ -323,8 +497,48 @@ function enlazarSalir(){
   const btn = document.getElementById("btnSalir");
   if(btn) btn.onclick = async ()=>{
     await sb.auth.signOut();
-    estado.sesion = null; estado.esAdmin = false; estado.datos = { servicios:[], profesionales:[], relacion:[], horario:[], negocio:null };
+    estado.sesion = null; estado.esAdmin = false; estado.mfaVerificado = false; estado.mfaEnPantalla = null; estado.errorMfa = null;
+    estado.datos = { servicios:[], profesionales:[], relacion:[], horario:[], negocio:null, bloqueos:[], trabajos:[] };
     render();
+  };
+}
+
+/* ===================== CAMBIAR CONTRASEÑA ===================== */
+
+function vistaCambiarClave(){
+  return `
+  <div class="panel" style="max-width:420px">
+    <h2>Cambiar contraseña</h2>
+    <p class="ayuda">Mínimo 10 caracteres, con mayúscula, minúscula, número y símbolo. La contraseña actual sigue valiendo si no la cambias — esto es solo si quieres ponerte una nueva.</p>
+    ${campoClave("ccClave1", "Nueva contraseña", "new-password")}
+    ${campoClave("ccClave2", "Repítela", "new-password")}
+    ${estado.errorClave ? `<div class="mensaje error">${estado.errorClave}</div>` : ""}
+    <button class="btn btn-dorado" id="btnGuardarClave">Guardar contraseña</button>
+    <button class="btn btn-texto" id="btnCancelarClave">Cancelar</button>
+  </div>`;
+}
+
+function enlazarCambiarClave(){
+  enlazarOjos();
+  document.getElementById("btnCancelarClave").onclick = ()=>{ estado.mostrarCambioClave = false; estado.errorClave = null; render(); };
+  document.getElementById("btnGuardarClave").onclick = async ()=>{
+    const c1 = document.getElementById("ccClave1").value;
+    const c2 = document.getElementById("ccClave2").value;
+    const debil = fallaClave(c1);
+    if(debil){ estado.errorClave = debil; render(); return; }
+    if(c1 !== c2){ estado.errorClave = "Las dos contraseñas no coinciden."; render(); return; }
+    const btn = document.getElementById("btnGuardarClave");
+    btn.disabled = true; btn.textContent = "Guardando…";
+    const { error } = await sb.auth.updateUser({ password: c1 });
+    if(error){
+      estado.errorClave = "No se pudo guardar: " + error.message;
+      render();
+      return;
+    }
+    estado.mostrarCambioClave = false;
+    estado.errorClave = null;
+    render();
+    mostrarMensaje("ok", "Contraseña cambiada.");
   };
 }
 
@@ -991,6 +1205,95 @@ function enlazarVacaciones(){
     if(error){ mostrarMensaje("error", "No se pudo borrar: " + error.message); return; }
     await cargarDatos();
     mostrarMensaje("ok", "Bloqueo quitado.");
+  });
+}
+
+/* ===================== TRABAJOS (galería de fotos/vídeos) ===================== */
+
+function vistaTrabajos(){
+  const filas = estado.datos.trabajos.map(t=>`
+    <div class="panel" data-id="${t.id}" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+      <div style="width:64px;height:64px;border-radius:8px;overflow:hidden;flex:0 0 auto;background:var(--crema)">
+        ${t.tipo==="video"
+          ? `<video src="${t.url}" style="width:100%;height:100%;object-fit:cover" muted></video>`
+          : `<img src="${t.url}" style="width:100%;height:100%;object-fit:cover" alt="">`}
+      </div>
+      <div class="campo" style="flex:1;min-width:160px;margin:0"><label>Título</label><input type="text" class="tTitulo" value="${t.titulo||''}" placeholder="(sin título)"></div>
+      <div class="campo" style="width:80px;margin:0"><label>Orden</label><input type="number" class="tOrden" value="${t.orden}"></div>
+      <label style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" class="tActivo" ${t.activo?"checked":""}> Visible</label>
+      <button class="btn btn-peq btn-dorado guardar-trabajo">Guardar</button>
+      <button class="btn-x borrar-trabajo" title="Borrar">×</button>
+    </div>`).join("");
+  return `
+  <div class="panel">
+    <h2>Añadir foto o vídeo</h2>
+    <p class="ayuda">Sube una foto o un vídeo corto (máx. 50 MB) para "Nuestros trabajos" en la web. Se publica al momento.</p>
+    <div class="fila-campos">
+      <div class="campo"><label>Archivo</label><input type="file" id="nuevoArchivo" accept="image/*,video/*"></div>
+      <div class="campo"><label>Título <span class="nota-opc">(opcional)</span></label><input type="text" id="nuevoTitulo" placeholder="p. ej. Recogido de boda"></div>
+    </div>
+    <button class="btn btn-negro" id="btnSubirTrabajo">⬆ Subir</button>
+  </div>
+  ${filas || `<p class="ayuda">Todavía no hay ninguna foto o vídeo.</p>`}`;
+}
+
+function enlazarTrabajos(){
+  document.getElementById("btnSubirTrabajo").onclick = async (e)=>{
+    const btn = e.target;
+    const input = document.getElementById("nuevoArchivo");
+    const archivo = input.files[0];
+    if(!archivo){ mostrarMensaje("error", "Elige una foto o un vídeo primero."); return; }
+    const esVideo = archivo.type.startsWith("video/");
+    if(!esVideo && !archivo.type.startsWith("image/")){ mostrarMensaje("error", "Solo se admiten fotos o vídeos."); return; }
+    if(archivo.size > 50*1024*1024){ mostrarMensaje("error", "El archivo pesa más de 50 MB — prueba con uno más ligero o un vídeo más corto."); return; }
+    btn.disabled = true; btn.textContent = "Subiendo…";
+    const extension = (archivo.name.split(".").pop() || "dat").toLowerCase();
+    const ruta = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${extension}`;
+    const { error: errorSubida } = await sb.storage.from("trabajos").upload(ruta, archivo);
+    if(errorSubida){ mostrarMensaje("error", "No se pudo subir: " + errorSubida.message); btn.disabled=false; btn.textContent="⬆ Subir"; return; }
+    const { data: urlData } = sb.storage.from("trabajos").getPublicUrl(ruta);
+    const maxOrden = estado.datos.trabajos.reduce((m,t)=>Math.max(m, t.orden||0), 0);
+    const { error } = await sb.from("trabajos").insert({
+      tipo: esVideo ? "video" : "foto",
+      url: urlData.publicUrl,
+      titulo: document.getElementById("nuevoTitulo").value.trim() || null,
+      orden: maxOrden + 1
+    });
+    btn.disabled = false; btn.textContent = "⬆ Subir";
+    if(error){ mostrarMensaje("error", "No se pudo guardar: " + error.message); return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Subido y publicado.");
+  };
+
+  document.querySelectorAll(".guardar-trabajo").forEach(btn=>btn.onclick = async ()=>{
+    const panel = btn.closest(".panel");
+    const id = panel.dataset.id;
+    btn.disabled = true; btn.textContent = "...";
+    const { error } = await sb.from("trabajos").update({
+      titulo: panel.querySelector(".tTitulo").value.trim() || null,
+      orden: Number(panel.querySelector(".tOrden").value) || 0,
+      activo: panel.querySelector(".tActivo").checked
+    }).eq("id", id);
+    if(error){ mostrarMensaje("error", "No se pudo guardar: " + error.message); btn.disabled=false; btn.textContent="Guardar"; return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Guardado.");
+  });
+
+  document.querySelectorAll(".borrar-trabajo").forEach(btn=>btn.onclick = async ()=>{
+    const panel = btn.closest(".panel");
+    const id = panel.dataset.id;
+    const trabajo = estado.datos.trabajos.find(t=>t.id===id);
+    if(!confirm("¿Borrar esta foto/vídeo para siempre? No se puede deshacer.")) return;
+    btn.disabled = true;
+    const marcador = "/storage/v1/object/public/trabajos/";
+    if(trabajo && trabajo.url.includes(marcador)){
+      const ruta = trabajo.url.split(marcador)[1];
+      await sb.storage.from("trabajos").remove([ruta]);
+    }
+    const { error } = await sb.from("trabajos").delete().eq("id", id);
+    if(error){ mostrarMensaje("error", "No se pudo borrar: " + error.message); btn.disabled=false; return; }
+    await cargarDatos();
+    mostrarMensaje("ok", "Borrado.");
   });
 }
 

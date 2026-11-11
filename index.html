@@ -159,7 +159,14 @@
     display:flex;flex-direction:column;justify-content:flex-end;padding:16px;
     color:#fff;transition:.3s;
   }
-  .trabajo-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .trabajo-card img,.trabajo-card video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .trabajo-card .icono-video{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;
+    width:44px;height:44px;border-radius:50%;background:rgba(23,20,15,.45);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;
+    pointer-events:none;transition:opacity .2s;
+  }
+  .trabajo-card:has(video:not(:paused)) .icono-video{opacity:0}
   .trabajo-card::before{
     content:"";position:absolute;inset:0;z-index:1;
     background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.55) 100%);
@@ -517,16 +524,18 @@ const CATEGORIAS = [
 let SERVICIOS = [];
 let PROFESIONALES = [];
 let HORARIO_NEGOCIO = {};
+let TRABAJOS = [];
 let errorCarga = null;
 
 async function cargarDatosIniciales(){
   try{
-    const [rServicios, rProfs, rRelacion, rHorario, rConfig] = await Promise.all([
+    const [rServicios, rProfs, rRelacion, rHorario, rConfig, rTrabajos] = await Promise.all([
       sb.from("services").select("id,categoria,nombre,descripcion,precio,duracion_minutos,icono").eq("activo", true).order("orden"),
       sb.from("professionals").select("id,nombre").eq("activo", true).order("orden"),
       sb.from("professional_services").select("professional_id,service_id"),
       sb.from("business_hours").select("dia_semana,hora_inicio,hora_fin"),
-      sb.from("business_settings").select("*").single()
+      sb.from("business_settings").select("*").single(),
+      sb.from("trabajos").select("tipo,url,titulo").eq("activo", true).order("orden")
     ]);
     const primerError = [rServicios, rProfs, rRelacion, rHorario].find(r => r.error);
     if(primerError) throw primerError.error;
@@ -553,6 +562,7 @@ async function cargarDatosIniciales(){
     });
 
     if(rConfig.data) aplicarDatosNegocio(rConfig.data);
+    TRABAJOS = rTrabajos.data || [];
   }catch(err){
     console.error(err);
     errorCarga = "No se pudo conectar con la base de datos. Comprueba tu conexión e inténtalo de nuevo.";
@@ -626,8 +636,6 @@ function pintarMapa(direccion){
     </a>`;
 }
 
-// Iconos reales de cada red (en línea, a juego con el resto del
-// diseño — se pintan en el color dorado del círculo que los envuelve).
 // Iconos con los colores oficiales de cada red (más fáciles de
 // reconocer de un vistazo que un icono de línea de un solo color).
 const ICONOS_REDES = {
@@ -656,7 +664,7 @@ const ICONOS_REDES = {
 };
 
 // Botones de contacto rápido (WhatsApp se calcula a partir del
-// teléfono; Instagram y TikTok solo salen si Luis los ha rellenado
+// teléfono; Instagram y TikTok solo salen si se han rellenado
 // en el panel de administración).
 function renderRedesSociales(config){
   const botones = [];
@@ -680,15 +688,6 @@ function renderRedesSociales(config){
 }
 
 // Fotos reales del Instagram de María Torres (@mariatorres_mpb).
-const TRABAJOS_REALES = [
-  {foto:"imagenes/trabajo-1.jpg", cap:"Manicura craquelada"},
-  {foto:"imagenes/trabajo-2.jpg", cap:"Nail art en color"},
-  {foto:"imagenes/trabajo-3.jpg", cap:"Maquillaje editorial"},
-  {foto:"imagenes/trabajo-4.jpg", cap:"Nuestro salón"},
-  {foto:"imagenes/trabajo-5.jpg", cap:"Maquillaje de novia"},
-  {foto:"imagenes/trabajo-6.jpg", cap:"Recogido elegante"}
-];
-
 function fechaEnDias(n){
   const d = new Date(); d.setDate(d.getDate()+n);
   return d.toISOString().slice(0,10);
@@ -825,11 +824,23 @@ function formatoFechaLarga(fechaISO){
 /* ===================== SECCIONES FIJAS (trabajos) ===================== */
 
 function pintarTrabajos(){
-  document.getElementById("grid-trabajos").innerHTML = TRABAJOS_REALES.map((t,i)=>`
-    <div class="trabajo-card reveal" style="transition-delay:${i*70}ms">
-      <img src="${t.foto}" alt="${t.cap}" loading="lazy">
-      <span class="cap">${t.cap}</span>
-    </div>`).join("");
+  const grid = document.getElementById("grid-trabajos");
+  if(!TRABAJOS.length){
+    grid.innerHTML = `<p style="color:var(--texto-claro);grid-column:1/-1">Todavía no hay fotos cargadas.</p>`;
+    return;
+  }
+  grid.innerHTML = TRABAJOS.map((t,i)=>{
+    const esVideo = t.tipo === "video";
+    const media = esVideo
+      ? `<video src="${t.url}" muted loop playsinline preload="metadata" onmouseover="this.play()" onmouseout="this.pause()"></video>`
+      : `<img src="${t.url}" alt="${t.titulo||''}" loading="lazy">`;
+    return `
+    <div class="trabajo-card reveal" style="transition-delay:${i*70}ms" ${esVideo?'onclick="this.querySelector(\'video\').paused ? this.querySelector(\'video\').play() : this.querySelector(\'video\').pause()"':''}>
+      ${media}
+      ${esVideo ? `<span class="icono-video">▶</span>` : ""}
+      ${t.titulo ? `<span class="cap">${t.titulo}</span>` : ""}
+    </div>`;
+  }).join("");
 }
 
 /* ===================== NAV: cambiar de pestaña (páginas separadas, sin scroll) ===================== */
