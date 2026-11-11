@@ -120,6 +120,12 @@ const SUPABASE_URL = "https://fpqefyyykwtdzpaubdhd.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwcWVmeXl5a3d0ZHpwYXViZGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0Nzc5MzUsImV4cCI6MjEwOTA1MzkzNX0.1pzYsWG1Jyhn_PyD46AQIyfExk9ZMnrCaf3KvVkIVj4";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Pausado temporalmente (ver supabase\14_pausar_doble_verificacion.sql):
+// mientras esto esté en false, el panel no pide el código de 6 cifras.
+// Para reactivarlo: poner esto en true Y volver a ejecutar
+// supabase\13_doble_verificacion.sql en Supabase (las dos cosas).
+const MFA_ACTIVO = false;
+
 const CATEGORIAS = [
   {id:"peluqueria", nombre:"Peluquería"},
   {id:"unas", nombre:"Uñas"},
@@ -381,7 +387,7 @@ async function render(){
   if(!estado.sesion){ raiz.innerHTML = vistaLogin(estado.errorLogin); enlazarLogin(); return; }
   if(!estado.esAdmin){ raiz.innerHTML = vistaSinAcceso(estado.sesion.user.email); enlazarSalir(); return; }
 
-  if(!estado.mfaVerificado){
+  if(MFA_ACTIVO && !estado.mfaVerificado){
     if(!estado.mfaEnPantalla){
       raiz.innerHTML = `<div class="pantalla-login"><p class="ayuda">Comprobando verificación en dos pasos…</p></div>`;
       await prepararMFA();
